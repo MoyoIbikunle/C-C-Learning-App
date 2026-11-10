@@ -1,0 +1,447 @@
+# C Quest course content
+# Format: see the top of course.c. Lines starting with # are comments.
+# Beginner lessons follow the "Intro to C" lecture notes (Coding Exam 1).
+
+# ============================================================
+LESSON 1 1 First programs
+SUMMARY main, printf, format specifiers and scanf
+# ------------------------------------------------------------
+CARD Your first C program
+TEXT Every C program starts running at the `main()` function. The line `#include <stdio.h>` gives us the input and output functions, such as `printf`.
+TEXT Every statement ends with a semicolon `;` and blocks of code sit inside curly braces `{ }`. C is compiled: your code is turned into machine code before it runs.
+TEXT `return 0;` at the end of `main` tells the system that everything worked.
+CODE #include <stdio.h>   // gives us printf and scanf
+CODE
+CODE int main() {
+CODE     printf("Hello, World!\n");
+CODE     return 0;   // 0 means "everything worked"
+CODE }
+END
+CARD Printing values with printf
+TEXT `printf` prints text, and format specifiers say where values go: `%d` for an int, `%f` for a float or double, `%c` for a char and `%s` for a string.
+TEXT `%.2f` prints a number with 2 decimal places, and `\n` starts a new line.
+CODE int age = 25;
+CODE float price = 19.99f;
+CODE char grade = 'A';
+CODE
+CODE printf("Age: %d\n", age);         // Age: 25
+CODE printf("Price: %.2f\n", price);   // Price: 19.99
+CODE printf("Grade: %c\n", grade);     // Grade: A
+END
+CARD Reading input with scanf
+TEXT `scanf` reads what the user types and stores it in a variable. It needs the variable's address, which is what the `&` means: "address of".
+TEXT When reading a single character, put a space before `%c` (as in `" %c"`) so it skips any leftover spaces or new lines.
+CODE int age;
+CODE char initial;
+CODE
+CODE printf("Enter your age: ");
+CODE scanf("%d", &age);        // & = the address of age
+CODE
+CODE printf("Enter your initial: ");
+CODE scanf(" %c", &initial);   // space before %c skips whitespace
+END
+# ------------------------------------------------------------
+QUESTION choice
+TEXT Where does a C program start running?
+OPTION At the first line of the file
+OPTION At the main() function
+OPTION At the first function written in the file
+OPTION At #include <stdio.h>
+ANSWER 2
+EXPLAIN Execution always starts at main(), wherever it is in the file. #include lines are handled before compiling; they don't run.
+END
+QUESTION choice
+TEXT Which format specifier prints a single character?
+OPTION %d
+OPTION %f
+OPTION %c
+OPTION %s
+ANSWER 3
+EXPLAIN %c is for a char. %d is for an int, %f for a float or double, and %s for a string.
+END
+QUESTION output
+TEXT What does this print?
+CODE int age = 25;
+CODE float price = 19.99f;
+CODE printf("Age: %d, Price: %.2f\n", age, price);
+OPTION Age: 25, Price: 19.99
+OPTION Age: 25, Price: 19.990000
+OPTION Age: %d, Price: %.2f
+OPTION Age: 25, Price: 20
+ANSWER 1
+EXPLAIN %d is replaced by age (25), and %.2f prints price with exactly 2 decimal places: 19.99. Plain %f would print 19.990000.
+END
+QUESTION bug
+TEXT This program should read the user's age, but it crashes or prints rubbish. Click the line with the mistake.
+CODE #include <stdio.h>
+CODE int main() {
+CODE     int age;
+CODE     printf("Enter your age: ");
+CODE     scanf("%d", age);
+CODE     printf("You are %d\n", age);
+CODE     return 0;
+CODE }
+ANSWER 5
+EXPLAIN scanf needs the address of the variable to store into: scanf("%d", &age). Without the &, it treats age's (random) value as an address.
+END
+QUESTION bug
+TEXT This program won't compile. Click the line with the mistake.
+CODE #include <stdio.h>
+CODE int main() {
+CODE     printf("Hello, World!\n")
+CODE     return 0;
+CODE }
+ANSWER 3
+EXPLAIN Every statement must end with a semicolon. The printf line is missing its ; at the end.
+END
+
+# ============================================================
+LESSON 2 1 Variables and maths
+SUMMARY Types, const, integer division, remainder and casting
+# ------------------------------------------------------------
+CARD Variables and types
+TEXT In C you must declare the type of every variable before using it. `int` holds whole numbers (usually 4 bytes), `float` and `double` hold decimals (4 and 8 bytes), and `char` holds a single character in single quotes.
+TEXT A variable that isn't given a value isn't set to 0: it holds whatever value was already in that memory.
+TEXT `const` makes a variable unchangeable. Trying to change it is a compile error.
+CODE int var;              // not initialised: whatever was in memory
+CODE int age = 25;         // whole number
+CODE double pi = 3.14159;  // decimal (8 bytes)
+CODE char grade = 'A';     // one character, single quotes
+CODE
+CODE const int MAX_SCORE = 100;
+CODE // MAX_SCORE = 120;   // error: it's const
+END
+CARD Doing maths
+TEXT With two ints, `/` does integer division: the decimal part is cut off, so `10 / 3` is 3. The `%` operator gives the remainder: `10 % 3` is 1.
+TEXT `count++` adds 1 and `count--` takes 1 away. `num += 5` is short for `num = num + 5`, and `num *= 2` for `num = num * 2`.
+CODE int a = 10, b = 3;
+CODE printf("%d\n", a / b);   // 3 (integer division)
+CODE printf("%d\n", a % b);   // 1 (remainder)
+CODE
+CODE int num = 10;
+CODE num += 5;    // 15
+CODE num *= 2;    // 30
+END
+CARD Casting
+TEXT Casting converts a value to another type. `(float)7 / 2` turns 7 into a float first, so the division keeps its decimal: 3.5.
+TEXT Converting a float to an int cuts off the decimal part rather than rounding, so `(int)3.9` is 3.
+CODE int result = 7 / 2;            // 3 (truncated)
+CODE float exact = (float)7 / 2;    // 3.5
+CODE int cut = (int)3.9;            // 3, not 4
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What does this print?
+CODE printf("%d", 7 / 2);
+OPTION 3.5
+OPTION 3
+OPTION 4
+OPTION 3.0
+ANSWER 2
+EXPLAIN 7 and 2 are both ints, so this is integer division: the .5 is cut off, giving 3. It doesn't round up to 4.
+END
+QUESTION output
+TEXT What does this print?
+CODE printf("%d", 10 % 3);
+OPTION 3
+OPTION 1
+OPTION 0
+OPTION 3.33
+ANSWER 2
+EXPLAIN % gives the remainder. 10 divided by 3 is 3 remainder 1, so 10 % 3 is 1.
+END
+QUESTION output
+TEXT What does this print?
+CODE float r = (float)7 / 2;
+CODE printf("%.2f", r);
+OPTION 3.00
+OPTION 3.50
+OPTION 4.00
+OPTION 3
+ANSWER 2
+EXPLAIN The cast turns 7 into 7.0 before dividing, so the result keeps its decimal: 3.5, printed with 2 decimal places as 3.50.
+END
+QUESTION choice
+TEXT What value does `int var;` hold before you give it one?
+OPTION Always 0
+OPTION Whatever value was already in that memory
+OPTION It won't compile
+OPTION Always -1
+ANSWER 2
+EXPLAIN Local variables in C aren't set to anything automatically. Until you give it a value, var holds whatever happened to be in that memory, so always initialise variables.
+END
+QUESTION output
+TEXT What does this print?
+CODE int num = 10;
+CODE num += 5;
+CODE num *= 2;
+CODE printf("%d", num);
+OPTION 25
+OPTION 30
+OPTION 20
+OPTION 15
+ANSWER 2
+EXPLAIN num += 5 makes it 15, then num *= 2 doubles it to 30.
+END
+QUESTION bug
+TEXT This code won't compile. Click the line with the mistake.
+CODE const int MAX_SCORE = 100;
+CODE int score = 95;
+CODE MAX_SCORE = 120;
+CODE printf("%d %d\n", score, MAX_SCORE);
+ANSWER 3
+EXPLAIN MAX_SCORE is const, so it can't be changed after it's declared. Assigning 120 to it is a compile error.
+END
+
+# ============================================================
+LESSON 3 1 Decisions and loops
+SUMMARY if, else, switch, while, do-while, for, break and continue
+# ------------------------------------------------------------
+CARD Making decisions
+TEXT `if` runs code only when a condition is true. `else if` checks another condition, and `else` catches everything left. Only the first matching branch runs.
+TEXT `&&` means AND (both must be true), and `||` means OR (at least one must be true).
+CODE int score = 85;
+CODE if (score >= 90) {
+CODE     printf("Grade: A\n");
+CODE } else if (score >= 80) {
+CODE     printf("Grade: B\n");    // this one runs
+CODE } else {
+CODE     printf("Grade: F\n");
+CODE }
+CODE
+CODE if (age >= 18 && age <= 65) printf("Working age\n");
+END
+CARD The switch statement
+TEXT `switch` checks one variable against several exact values. Each `case` needs a `break;` at the end, or the code carries on into the next case (called fall-through).
+TEXT Two cases with no code between them share the same code, which is handy for upper and lower case letters. `default` runs when nothing else matches.
+CODE switch (grade) {
+CODE     case 'A':
+CODE     case 'a':
+CODE         printf("Excellent!\n");
+CODE         break;
+CODE     case 'B':
+CODE     case 'b':
+CODE         printf("Good job!\n");
+CODE         break;
+CODE     default:
+CODE         printf("Invalid grade\n");
+CODE }
+END
+CARD Loops
+TEXT A `while` loop checks its condition first, so it may never run. A `do-while` loop checks at the end, so it always runs at least once.
+TEXT A `for` loop puts the start, the condition and the step in one line. `break` leaves a loop straight away, and `continue` skips to the next time round.
+CODE for (int i = 1; i <= 10; i++) {
+CODE     if (i % 2 == 0) {
+CODE         continue;   // skip even numbers
+CODE     }
+CODE     printf("%d ", i);   // 1 3 5 7 9
+CODE }
+CODE
+CODE int number = 3;
+CODE do {
+CODE     printf("%d ", number);   // 3 2 1
+CODE     number--;
+CODE } while (number != 0);
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What does this print?
+CODE int score = 75;
+CODE if (score >= 90) printf("A");
+CODE else if (score >= 80) printf("B");
+CODE else if (score >= 70) printf("C");
+CODE else printf("F");
+OPTION A
+OPTION B
+OPTION C
+OPTION F
+ANSWER 3
+EXPLAIN 75 isn't >= 90 or >= 80, but it is >= 70, so that branch prints C. Once one branch runs, the rest are skipped.
+END
+QUESTION output
+TEXT What does this print?
+CODE for (int i = 1; i <= 6; i++) {
+CODE     if (i % 2 == 0) {
+CODE         continue;
+CODE     }
+CODE     printf("%d ", i);
+CODE }
+OPTION 2 4 6
+OPTION 1 3 5
+OPTION 1 2 3 4 5 6
+OPTION 1 3 5 7
+ANSWER 2
+EXPLAIN When i is even, continue skips the printf and goes to the next i. So only the odd numbers 1, 3 and 5 are printed (the loop stops after 6).
+END
+QUESTION choice
+TEXT Which loop always runs its body at least once?
+OPTION for
+OPTION while
+OPTION do-while
+OPTION None of them
+ANSWER 3
+EXPLAIN A do-while loop checks its condition at the end, after the body has run once. for and while check first, so their body might never run.
+END
+QUESTION bug
+TEXT With grade 'A', this prints both "Excellent!" and "Good job!". Click the line that should be followed by a break;
+CODE char grade = 'A';
+CODE switch (grade) {
+CODE     case 'A':
+CODE         printf("Excellent!\n");
+CODE     case 'B':
+CODE         printf("Good job!\n");
+CODE         break;
+CODE     default:
+CODE         printf("Invalid\n");
+CODE }
+ANSWER 4
+EXPLAIN Without a break after printing "Excellent!", the code falls through into case 'B' and prints "Good job!" too.
+END
+QUESTION output
+TEXT What shape does this print?
+CODE for (int row = 1; row <= 3; row++) {
+CODE     for (int col = 1; col <= row; col++) {
+CODE         printf("*");
+CODE     }
+CODE     printf("\n");
+CODE }
+OPTION *** on each of 3 lines
+OPTION * then ** then ***
+OPTION *** then ** then *
+OPTION * on each of 3 lines
+ANSWER 2
+EXPLAIN The inner loop runs row times, so row 1 prints one star, row 2 prints two, and row 3 prints three: a right-angled triangle.
+END
+QUESTION bug
+TEXT This should count down from 10 to 1, but it never stops. Click the line with the mistake.
+CODE printf("Counting down:\n");
+CODE for (int i = 10; i >= 1; i++) {
+CODE     printf("%d ", i);
+CODE }
+ANSWER 2
+EXPLAIN To count down, i must go down: i-- instead of i++. With i++ it goes 10, 11, 12... and i >= 1 stays true.
+END
+
+# ============================================================
+LESSON 4 1 Arrays and strings
+SUMMARY 1D and 2D arrays, sizeof, strings and the null terminator
+# ------------------------------------------------------------
+CARD Arrays
+TEXT An array stores several values of the same type next to each other in memory. Indexes start at 0, so the last element of a 5-element array is index 4.
+TEXT If you give fewer values than the size, the rest are set to 0. `sizeof(arr) / sizeof(arr[0])` works out how many elements an array has.
+CODE int numbers[5] = {10, 20, 30, 40, 50};
+CODE printf("%d\n", numbers[0]);   // 10 (first)
+CODE printf("%d\n", numbers[4]);   // 50 (last)
+CODE
+CODE int scores[10] = {85, 92, 78};   // the rest are 0
+CODE int size = sizeof(numbers) / sizeof(numbers[0]);   // 5
+END
+CARD 2D arrays
+TEXT A 2D array is a grid of rows and columns. `matrix[row][col]` picks one element, and nested loops go through every row and column.
+CODE int matrix[3][4] = {
+CODE     {1, 2, 3, 4},
+CODE     {5, 6, 7, 8},
+CODE     {9, 10, 11, 12}
+CODE };
+CODE printf("%d\n", matrix[2][0]);   // 9
+CODE
+CODE for (int row = 0; row < 3; row++)
+CODE     for (int col = 0; col < 4; col++)
+CODE         printf("%3d ", matrix[row][col]);
+END
+CARD Strings
+TEXT C has no separate string type. A string is an array of chars that ends with the null terminator `'\0'`. That's how `printf("%s")` knows where it stops: there's no stored length.
+TEXT `char name[20] = "Alice";` stores 'A', 'l', 'i', 'c', 'e', '\0'. If you build the array by hand, you must add the `'\0'` yourself.
+CODE char name[20] = "Alice";   // '\0' added for you
+CODE
+CODE int len = 0;
+CODE while (name[len] != '\0') {   // count until the terminator
+CODE     len++;
+CODE }
+CODE printf("%d\n", len);   // 5
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What does this print?
+CODE int numbers[5] = {10, 20, 30, 40, 50};
+CODE printf("%d", numbers[2]);
+OPTION 20
+OPTION 30
+OPTION 40
+OPTION It won't compile
+ANSWER 2
+EXPLAIN Indexes start at 0: numbers[0] is 10, numbers[1] is 20 and numbers[2] is 30.
+END
+QUESTION choice
+TEXT After `int scores[10] = {85, 92, 78};` what is `scores[5]`?
+OPTION 0
+OPTION Whatever was in memory
+OPTION 78
+OPTION It won't compile
+ANSWER 1
+EXPLAIN When an array is given some values, the elements without one are set to 0. So scores[3] to scores[9] are all 0.
+END
+QUESTION bug
+TEXT This should add up the 5 numbers, but it reads outside the array. Click the line with the mistake.
+CODE int numbers[5] = {1, 2, 3, 4, 5};
+CODE int sum = 0;
+CODE for (int i = 0; i <= 5; i++) {
+CODE     sum += numbers[i];
+CODE }
+ANSWER 3
+EXPLAIN The valid indexes are 0 to 4. With i <= 5 the loop also reads numbers[5], which is past the end. It should be i < 5.
+END
+QUESTION output
+TEXT What does this print?
+CODE int values[] = {45, 12, 89, 34};
+CODE int size = sizeof(values) / sizeof(values[0]);
+CODE printf("%d", size);
+OPTION 4
+OPTION 16
+OPTION 8
+OPTION 1
+ANSWER 1
+EXPLAIN sizeof(values) is the size of the whole array in bytes (16 with 4-byte ints), and sizeof(values[0]) is one element (4). 16 / 4 = 4 elements.
+END
+QUESTION choice
+TEXT How many chars does `char city[] = "Cork";` store?
+OPTION 4
+OPTION 5
+OPTION 3
+OPTION 6
+ANSWER 2
+EXPLAIN The 4 letters plus the null terminator '\0' that marks the end of the string: 5 chars.
+END
+QUESTION output
+TEXT What does this print?
+CODE int m[3][4] = { {1, 2, 3, 4},
+CODE                 {5, 6, 7, 8},
+CODE                 {9, 10, 11, 12} };
+CODE printf("%d", m[1][2]);
+OPTION 6
+OPTION 7
+OPTION 10
+OPTION 3
+ANSWER 2
+EXPLAIN m[1] is the second row {5, 6, 7, 8}, and [2] is its third element: 7.
+END
+
+# ============================================================
+# Coming soon: these lessons have no questions yet, so they show as
+# "Coming soon" on the learning path until their content is added.
+LESSON 5 2 Functions
+SUMMARY Writing functions, passing arrays, pass by value and by reference
+LESSON 6 2 Number problems
+SUMMARY Leap years, palindromes, primes and binary to decimal (Lab 1)
+LESSON 7 2 Array problems
+SUMMARY Find, insert, delete, reverse, rotate and more (Lab 1)
+LESSON 8 2 Patterns and grids
+SUMMARY Triangles with nested loops and the 4x6 grid puzzles (Lab 1)
+LESSON 9 3 Pointers
+SUMMARY Addresses, & and *, pass by pointer, pointer arithmetic, nullptr
+LESSON 10 3 Memory management
+SUMMARY Stack and heap, new and delete, malloc and free, leaks
+LESSON 11 3 Linked lists
+SUMMARY Nodes, inserting, traversing and deleting, doubly linked lists
+LESSON 12 3 Classes
+SUMMARY Fields, methods, constructors, access, copy constructors, destructors
