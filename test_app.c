@@ -28,21 +28,16 @@ static void testRealCourse(void)
     if (n == 0) printf("course error: %s\n", error);
     CHECK(n == 12);
 
-    /* Lessons 1-4 are written, 5-12 are coming soon */
-    for (int i = 0; i < 4; i++)
+    /* All 12 lessons are written: 4 per level, numbered in order */
+    for (int i = 0; i < 12; i++)
     {
+        CHECK(course.lessons[i].number == i + 1);
+        CHECK(course.lessons[i].level == i / 4);
         CHECK(course.lessons[i].cardCount >= 2);
         CHECK(course.lessons[i].questionCount >= 5);
-        CHECK(lessonReady(&course, i));
-        CHECK(course.lessons[i].level == 0);
-    }
-    for (int i = 4; i < 12; i++)
-    {
-        CHECK(!lessonReady(&course, i));
         CHECK(course.lessons[i].summary[0] != '\0');
+        CHECK(lessonReady(&course, i));
     }
-    CHECK(course.lessons[4].level == 1);
-    CHECK(course.lessons[11].level == 2);
     CHECK(strcmp(course.lessons[0].title, "First programs") == 0);
 
     /* Every question's answer points at a real option or line */
@@ -56,6 +51,19 @@ static void testRealCourse(void)
             int limit = (q->type == Q_BUG) ? q->codeCount : q->optionCount;
             CHECK(q->answer >= 1 && q->answer <= limit);
             CHECK(q->explain[0] != '\0');
+            /* Answer buttons are one line: keep options short enough to fit */
+            for (int o = 0; o < q->optionCount; o++)
+            {
+                int limit = q->codeCount > 0 ? 38 : 55;
+                if ((int)strlen(q->options[o]) > limit) printf("Long option in lesson %d: %s\n", i + 1, q->options[o]);
+                CHECK((int)strlen(q->options[o]) <= limit);
+            }
+            /* Code must fit the screen: 16 lines max on cards and questions */
+            CHECK(q->codeCount <= 16);
+        }
+        for (int k = 0; k < lesson->cardCount; k++)
+        {
+            CHECK(cardAt(lesson, k)->codeCount <= 16);
         }
         CHECK(questionAt(lesson, lesson->questionCount) == NULL);
         CHECK(cardAt(lesson, lesson->cardCount) == NULL);
@@ -94,6 +102,16 @@ static void testBadCourse(void)
     writeFile("test_course.txt", "LESSON 1 1 Test\nQUESTION essay\nEND\n");
     CHECK(loadCourse("test_course.txt", &course, error, sizeof(error)) == 0);
     CHECK(strstr(error, "unknown question type") != NULL);
+
+    /* Too many code lines is an error, not silently cut off */
+    {
+        char text[2000] = "LESSON 1 1 Test\nCARD A\n";
+        for (int k = 0; k < MAX_CODE + 1; k++) strcat(text, "CODE x;\n");
+        strcat(text, "END\n");
+        writeFile("test_course.txt", text);
+        CHECK(loadCourse("test_course.txt", &course, error, sizeof(error)) == 0);
+        CHECK(strstr(error, "too many CODE") != NULL);
+    }
 
     writeFile("test_course.txt", "CARD Too early\n");
     CHECK(loadCourse("test_course.txt", &course, error, sizeof(error)) == 0);
@@ -160,11 +178,12 @@ static void testProgress(void)
     }
     CHECK(badgeCount(&l) == 4);
 
-    /* Lesson 5 is coming soon, so it stays locked even after lesson 4 */
-    CHECK(!lessonUnlocked(&l, &course, 4));
+    /* Lesson 5 opens after lesson 4; Exam Ready isn't earned yet */
+    CHECK(lessonUnlocked(&l, &course, 4));
+    CHECK(!lessonUnlocked(&l, &course, 5));
     CHECK(!(l.badges & (1u << BADGE_EXAM_READY)));
 
-    /* Save and load round trip */
+    /* Save and load round trip (before the rest of the course) */
     Learner list[2];
     list[0] = l;
     newLearner(&list[1], "Ada");
@@ -180,6 +199,30 @@ static void testProgress(void)
     CHECK(findLearner(back, 2, "Zed") == -1);
     remove("test_learners.txt");
     CHECK(loadLearners("test_learners.txt", back, MAX_LEARNERS) == 0);
+
+    /* Intermediate lessons: Problem Solver after lesson 8 */
+    for (int i = 4; i < 8; i++)
+    {
+        got = finishLesson(&l, &course, i, course.lessons[i].questionCount * 10 * 7 / 10 + 5);
+        CHECK(lessonPassed(&l, i));
+        CHECK(((got >> BADGE_PROBLEM_SOLVER) & 1u) == (i == 7));
+    }
+
+    /* Pointers at 90%: passed but no Pointer Pro; 100% earns it */
+    int n9 = course.lessons[8].questionCount;
+    got = finishLesson(&l, &course, 8, n9 * 10 - 5);
+    CHECK(lessonPassed(&l, 8));
+    CHECK(!(got & (1u << BADGE_POINTER_PRO)));
+    got = finishLesson(&l, &course, 8, n9 * 10);
+    CHECK(got & (1u << BADGE_POINTER_PRO));
+
+    /* Last three lessons: Exam Ready only once lesson 12 is passed */
+    for (int i = 9; i < 12; i++)
+    {
+        got = finishLesson(&l, &course, i, course.lessons[i].questionCount * 10);
+        CHECK(((got >> BADGE_EXAM_READY) & 1u) == (i == 11));
+    }
+    CHECK(badgeCount(&l) == BADGE_COUNT);
 
     freeCourse(&course);
 }

@@ -427,21 +427,1057 @@ EXPLAIN m[1] is the second row {5, 6, 7, 8}, and [2] is its third element: 7.
 END
 
 # ============================================================
-# Coming soon: these lessons have no questions yet, so they show as
-# "Coming soon" on the learning path until their content is added.
+# Intermediate lessons follow Lab 1 (Coding Exam 1 preparation).
+# ============================================================
 LESSON 5 2 Functions
 SUMMARY Writing functions, passing arrays, pass by value and by reference
+# ------------------------------------------------------------
+CARD Writing a function
+TEXT A function is a named block of code you can call again and again. It has a return type, a name and a list of parameters, like `int square(int n)`.
+TEXT `return` sends a value back to whoever called it. A function that returns nothing has the return type `void`.
+TEXT If a function is written below `main`, put a prototype (just the first line, ending in `;`) above `main` so the compiler knows it exists.
+CODE int square(int n);   // prototype
+CODE
+CODE int main() {
+CODE     printf("%d\n", square(4));   // 16
+CODE     return 0;
+CODE }
+CODE
+CODE int square(int n) {
+CODE     return n * n;
+CODE }
+END
+CARD Pass by value
+TEXT When you pass a variable to a function, the function gets a copy of its value. Changing the copy doesn't change the original.
+TEXT To let a function change the caller's variable, pass its address with `&` and use `*` inside the function. This is called pass by reference (or pass by pointer). C++ also lets you write `int &x` for the same idea.
+CODE void addOne(int x) {
+CODE     x = x + 1;      // changes the copy only
+CODE }
+CODE
+CODE void addOneRef(int *x) {
+CODE     *x = *x + 1;    // changes the original
+CODE }
+CODE
+CODE int n = 5;
+CODE addOne(n);       // n is still 5
+CODE addOneRef(&n);   // n is now 6
+END
+CARD Passing arrays
+TEXT An array isn't copied when you pass it. The function gets the address of the first element, so it can change the caller's array.
+TEXT Because only the address is passed, the function can't work out the array's length. That's why you pass the size as well.
+CODE void doubleAll(int arr[], int size) {
+CODE     for (int i = 0; i < size; i++) {
+CODE         arr[i] = arr[i] * 2;
+CODE     }
+CODE }
+CODE
+CODE int nums[3] = {1, 2, 3};
+CODE doubleAll(nums, 3);   // nums is now {2, 4, 6}
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What does this print?
+CODE int triple(int n) {
+CODE     return n * 3;
+CODE }
+CODE
+CODE printf("%d", triple(triple(2)));
+OPTION 6
+OPTION 18
+OPTION 12
+OPTION 9
+ANSWER 2
+EXPLAIN The inner call runs first: triple(2) is 6. Then triple(6) is 18.
+END
+QUESTION output
+TEXT What does this print?
+CODE void change(int x) {
+CODE     x = 100;
+CODE }
+CODE
+CODE int main() {
+CODE     int a = 5;
+CODE     change(a);
+CODE     printf("%d", a);
+CODE     return 0;
+CODE }
+OPTION 100
+OPTION 5
+OPTION 0
+OPTION It won't compile
+ANSWER 2
+EXPLAIN change gets a copy of a, so setting x to 100 only changes the copy. a is still 5.
+END
+QUESTION output
+TEXT What does this print?
+CODE void setFirst(int arr[]) {
+CODE     arr[0] = 9;
+CODE }
+CODE
+CODE int nums[3] = {1, 2, 3};
+CODE setFirst(nums);
+CODE printf("%d %d", nums[0], nums[1]);
+OPTION 9 2
+OPTION 1 2
+OPTION 9 9
+OPTION 1 9
+ANSWER 1
+EXPLAIN Arrays are passed as the address of the first element, so the function changes the real array. nums[0] becomes 9 and nums[1] is still 2.
+END
+QUESTION choice
+TEXT What return type does a function have if it doesn't return a value?
+OPTION int
+OPTION void
+OPTION null
+OPTION empty
+ANSWER 2
+EXPLAIN void means "nothing". A void function can still use return; on its own to stop early.
+END
+QUESTION bug
+TEXT This should return the bigger of the two numbers. Click the line with the mistake.
+CODE int biggest(int a, int b) {
+CODE     if (a > b) {
+CODE         return a;
+CODE     }
+CODE     return a;
+CODE }
+ANSWER 5
+EXPLAIN If a isn't bigger, b must be the biggest, so the last line should be return b;
+END
+QUESTION choice
+TEXT Why do functions that take an array usually take its size too?
+OPTION C copies the array and needs to know how much
+OPTION They only get its address, so can't tell its length
+OPTION Without it, the array won't compile
+OPTION So the function can make the array bigger
+ANSWER 2
+EXPLAIN The function receives the address of the first element, not the whole array, so there's no way for it to know how many elements there are. sizeof inside the function gives the size of a pointer, not the array.
+END
+QUESTION bug
+TEXT This should swap x and y, but it won't compile. Click the line with the mistake.
+CODE void swap(int *a, int *b) {
+CODE     int temp = *a;
+CODE     *a = *b;
+CODE     *b = temp;
+CODE }
+CODE
+CODE int x = 1, y = 2;
+CODE swap(x, y);
+ANSWER 8
+EXPLAIN swap takes addresses (int *), so it must be called with swap(&x, &y). Passing the ints themselves is a type error.
+END
+
+# ============================================================
 LESSON 6 2 Number problems
 SUMMARY Leap years, palindromes, primes and binary to decimal (Lab 1)
+# ------------------------------------------------------------
+CARD Leap years and %
+TEXT "Divisible by" in C means the remainder is zero: `year % 4 == 0`. Remember `==` compares, while `=` assigns.
+TEXT A leap year is divisible by 4, but not by 100, unless it's also divisible by 400. So 2024 is a leap year, 1900 isn't, and 2000 is.
+TEXT `bool`, `true` and `false` come from `#include <stdbool.h>`.
+CODE #include <stdbool.h>
+CODE
+CODE bool isLeapYear(int year) {
+CODE     return (year % 4 == 0 && year % 100 != 0)
+CODE            || year % 400 == 0;
+CODE }
+CODE
+CODE // isLeapYear(2024) -> true
+CODE // isLeapYear(1900) -> false
+CODE // isLeapYear(2000) -> true
+END
+CARD Working with digits
+TEXT `n % 10` gives the last digit of a number, and `n / 10` removes it. Repeating this goes through the digits from right to left.
+TEXT To reverse a number, take the last digit each time and add it on the end of the new number with `reversed * 10 + last`. A palindrome reads the same both ways, so it equals its own reverse, like 121.
+CODE int reverse(int n) {
+CODE     int reversed = 0;
+CODE     while (n != 0) {
+CODE         int last = n % 10;               // last digit
+CODE         reversed = reversed * 10 + last;
+CODE         n = n / 10;                      // drop it
+CODE     }
+CODE     return reversed;
+CODE }
+CODE
+CODE // reverse(123) -> 321
+CODE // palindrome: reverse(n) == n
+END
+CARD Primes and binary
+TEXT A prime is only divisible by 1 and itself. Try dividing by 2, 3, 4 and so on; you only need to go up to the square root, which is what `i * i <= n` checks.
+TEXT In binary each digit is worth twice the one to its right: 1, 2, 4, 8. So 110 is 4 + 2 + 0 = 6. Read the digits with `% 10` and double the place value each time.
+CODE bool isPrime(int n) {
+CODE     if (n < 2) return false;
+CODE     for (int i = 2; i * i <= n; i++) {
+CODE         if (n % i == 0) return false;
+CODE     }
+CODE     return true;
+CODE }
+CODE int binaryToDecimal(int binary) {   // 110 -> 6
+CODE     int decimal = 0, place = 1;
+CODE     while (binary != 0) {
+CODE         decimal += (binary % 10) * place;
+CODE         place *= 2;
+CODE         binary /= 10;
+CODE     }
+CODE     return decimal;
+CODE }
+END
+# ------------------------------------------------------------
+QUESTION choice
+TEXT Which of these years is a leap year?
+OPTION 1900
+OPTION 2023
+OPTION 2000
+OPTION 2100
+ANSWER 3
+EXPLAIN 2000 is divisible by 400, so it's a leap year. 1900 and 2100 are divisible by 100 but not 400, and 2023 isn't divisible by 4.
+END
+QUESTION output
+TEXT What does this print?
+CODE int n = 4527;
+CODE printf("%d %d", n % 10, n / 10);
+OPTION 7 452
+OPTION 452 7
+OPTION 4 527
+OPTION 7 452.7
+ANSWER 1
+EXPLAIN n % 10 is the last digit, 7. n / 10 is integer division, which drops the last digit: 452.
+END
+QUESTION output
+TEXT Using the reverse function from the cards, what does this print?
+CODE printf("%d", reverse(1200));
+OPTION 0021
+OPTION 21
+OPTION 1200
+OPTION 2100
+ANSWER 2
+EXPLAIN The first two digits taken are 0s, which leave reversed at 0. Then 2 and 1 give 21. An int can't keep leading zeros.
+END
+QUESTION bug
+TEXT This says every number is not prime. Click the line with the mistake.
+CODE bool isPrime(int n) {
+CODE     if (n < 2) return false;
+CODE     for (int i = 1; i * i <= n; i++) {
+CODE         if (n % i == 0) return false;
+CODE     }
+CODE     return true;
+CODE }
+ANSWER 3
+EXPLAIN Every number divides by 1, so starting at i = 1 makes it return false straight away. The loop should start at i = 2.
+END
+QUESTION output
+TEXT Using binaryToDecimal from the cards, what does this print?
+CODE printf("%d", binaryToDecimal(1011));
+OPTION 11
+OPTION 13
+OPTION 1011
+OPTION 7
+ANSWER 1
+EXPLAIN Reading from the right: 1x1 + 1x2 + 0x4 + 1x8 = 1 + 2 + 0 + 8 = 11.
+END
+QUESTION choice
+TEXT Why can isPrime stop once i * i is bigger than n?
+OPTION Any bigger divisor pairs with a smaller one
+OPTION Numbers past the square root never divide n
+OPTION To avoid dividing by zero
+OPTION C doesn't allow loops past the square root
+ANSWER 1
+EXPLAIN Divisors come in pairs: if 36 = 9 x 4, the 4 is below the square root (6). So if there were a divisor above it, we'd already have found its partner below it.
+END
+QUESTION bug
+TEXT This won't compile. Click the line with the mistake.
+CODE int year = 2024;
+CODE if (year % 4 = 0) {
+CODE     printf("Divisible by 4\n");
+CODE }
+ANSWER 2
+EXPLAIN = assigns a value, and you can't assign to year % 4. To compare, use ==.
+END
+
+# ============================================================
 LESSON 7 2 Array problems
 SUMMARY Find, insert, delete, reverse, rotate and more (Lab 1)
+# ------------------------------------------------------------
+CARD Searching an array
+TEXT To find a value, check each element in turn. Return its index as soon as you find it, and return -1 at the end if it was never found. -1 works because it can never be a real index.
+TEXT Counting how often a value appears is the same loop, but you add 1 to a count instead of returning.
+CODE int find(int arr[], int size, int target) {
+CODE     for (int i = 0; i < size; i++) {
+CODE         if (arr[i] == target) {
+CODE             return i;      // found: stop here
+CODE         }
+CODE     }
+CODE     return -1;             // not found
+CODE }
+CODE
+CODE int arr[4] = {7, 3, 9, 3};
+CODE find(arr, 4, 3);   // 1 (the first 3)
+CODE find(arr, 4, 5);   // -1
+END
+CARD Inserting and deleting
+TEXT An array can't grow, so we keep `size` (how many it can hold) and `count` (how many are in use). Only insert when `count < size`.
+TEXT To insert, shift elements one place right, starting from the end so nothing gets overwritten. To delete, shift elements left over the gap, starting from the gap.
+CODE // Insert value at index
+CODE for (int i = count; i > index; i--) {
+CODE     arr[i] = arr[i - 1];
+CODE }
+CODE arr[index] = value;
+CODE count++;
+CODE
+CODE // Delete the element at index
+CODE for (int i = index; i < count - 1; i++) {
+CODE     arr[i] = arr[i + 1];
+CODE }
+CODE count--;
+END
+CARD Reversing and rotating
+TEXT To reverse in place, swap the first and last, then the second and second-last, and so on to the middle. Each swap needs a `temp` variable to hold one value.
+TEXT To rotate left by one, save the first element, shift everything left, then put the saved one at the end: {1, 2, 3, 4} becomes {2, 3, 4, 1}.
+CODE // Reverse
+CODE for (int i = 0; i < size / 2; i++) {
+CODE     int temp = arr[i];
+CODE     arr[i] = arr[size - 1 - i];
+CODE     arr[size - 1 - i] = temp;
+CODE }
+CODE
+CODE // Rotate left by one
+CODE int first = arr[0];
+CODE for (int i = 0; i < size - 1; i++) {
+CODE     arr[i] = arr[i + 1];
+CODE }
+CODE arr[size - 1] = first;
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT Using find from the cards, what does this print?
+CODE int arr[5] = {4, 8, 15, 16, 23};
+CODE printf("%d %d", find(arr, 5, 15), find(arr, 5, 7));
+OPTION 2 -1
+OPTION 3 -1
+OPTION 2 0
+OPTION 15 -1
+ANSWER 1
+EXPLAIN 15 is at index 2 (counting from 0). 7 isn't in the array, so find returns -1.
+END
+QUESTION output
+TEXT What does this print?
+CODE int arr[3] = {5, 6, 7};
+CODE int first = arr[0];
+CODE for (int i = 0; i < 2; i++) {
+CODE     arr[i] = arr[i + 1];
+CODE }
+CODE arr[2] = first;
+CODE printf("%d %d %d", arr[0], arr[1], arr[2]);
+OPTION 6 7 5
+OPTION 7 5 6
+OPTION 5 6 7
+OPTION 6 7 7
+ANSWER 1
+EXPLAIN This rotates left by one: 6 and 7 move left, and the saved 5 goes on the end.
+END
+QUESTION bug
+TEXT This should insert value at index, but it fills the rest of the array with the same number. Click the line with the mistake.
+CODE // count = how many elements are in use
+CODE for (int i = index; i < count; i++) {
+CODE     arr[i + 1] = arr[i];
+CODE }
+CODE arr[index] = value;
+CODE count++;
+ANSWER 2
+EXPLAIN Shifting from the front copies arr[index] into the next place, then copies that again, all the way along. Start at the end instead: for (int i = count; i > index; i--) arr[i] = arr[i - 1];
+END
+QUESTION output
+TEXT What does this print?
+CODE int arr[6] = {2, 7, 2, 2, 5, 7};
+CODE int count = 0;
+CODE for (int i = 0; i < 6; i++) {
+CODE     if (arr[i] == 2) {
+CODE         count++;
+CODE     }
+CODE }
+CODE printf("%d", count);
+OPTION 1
+OPTION 2
+OPTION 3
+OPTION 6
+ANSWER 3
+EXPLAIN This counts how often 2 appears: at indexes 0, 2 and 3, so 3 times.
+END
+QUESTION choice
+TEXT Why does the reverse loop stop at size / 2?
+OPTION The second half is already in the right order
+OPTION Each swap fixes two places, so more would undo it
+OPTION Going further would read past the end
+OPTION It makes no difference, it's just faster
+ANSWER 2
+EXPLAIN Each swap puts two elements in their final places. Carrying on past the middle would swap them all back again, leaving the array unchanged.
+END
+QUESTION bug
+TEXT This deletes the element at index, but reads one place too far. Click the line with the mistake.
+CODE // count = how many elements are in use
+CODE for (int i = index; i < count; i++) {
+CODE     arr[i] = arr[i + 1];
+CODE }
+CODE count--;
+ANSWER 2
+EXPLAIN On the last time round, i is count - 1, so arr[i + 1] reads arr[count], which isn't in use and might be past the end of the array. It should be i < count - 1.
+END
+QUESTION choice
+TEXT Movies are 90, 120 and 60 minutes long and the flight is 180 minutes. Can someone watch exactly two different movies that fill the flight?
+OPTION Yes: 120 + 60
+OPTION Yes: 90 + 90
+OPTION No, no two movies add up to 180
+ANSWER 1
+EXPLAIN 120 + 60 = 180. 90 + 90 would mean watching the same movie twice, which isn't allowed, so the loops must check pairs where i != j.
+END
+
+# ============================================================
 LESSON 8 2 Patterns and grids
 SUMMARY Triangles with nested loops and the 4x6 grid puzzles (Lab 1)
+# ------------------------------------------------------------
+CARD Triangles with nested loops
+TEXT The outer loop goes through the rows, and the inner loop prints what's on each row. For a triangle, the inner loop's limit depends on the row: row 1 prints one A, row 2 prints two, and so on.
+TEXT After the inner loop, `printf("\n")` starts the next row.
+CODE for (int row = 1; row <= 4; row++) {
+CODE     for (int col = 1; col <= row; col++) {
+CODE         printf("A");
+CODE     }
+CODE     printf("\n");
+CODE }
+CODE
+CODE // A
+CODE // AA
+CODE // AAA
+CODE // AAAA
+END
+CARD The diamond
+TEXT The diamond has 7 rows, and the number of A's goes 1, 2, 3, 4, 3, 2, 1. Work out the count for each row, then use the same inner loop as before.
+TEXT For rows 5 to 7, `8 - row` gives 3, 2, 1. `a ? b : c` is a short if/else: if `a` is true it gives `b`, otherwise `c`.
+CODE for (int row = 1; row <= 7; row++) {
+CODE     int count = (row <= 4) ? row : 8 - row;
+CODE     for (int col = 1; col <= count; col++) {
+CODE         printf("A");
+CODE     }
+CODE     printf("\n");
+CODE }
+END
+CARD Scanning a grid
+TEXT The grid puzzle uses a 4 x 6 array. To scan it left to right, the outer loop goes through rows and the inner loop through columns.
+TEXT To check three in a row, compare `grid[r][c]` with the next two along. The column stops at `COLS - 3` so that `c + 2` is still inside the grid. A vertical check does the same with `r + 1` and `r + 2`.
+CODE #define ROWS 4
+CODE #define COLS 6
+CODE int grid[ROWS][COLS];
+CODE
+CODE for (int r = 0; r < ROWS; r++) {
+CODE     for (int c = 0; c <= COLS - 3; c++) {
+CODE         int v = grid[r][c];
+CODE         if (v > 0 && grid[r][c + 1] == v
+CODE                   && grid[r][c + 2] == v) {
+CODE             printf("Three %ds at row %d\n", v, r);
+CODE         }
+CODE     }
+CODE }
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What shape does this print?
+CODE for (int row = 3; row >= 1; row--) {
+CODE     for (int col = 1; col <= row; col++) {
+CODE         printf("A");
+CODE     }
+CODE     printf("\n");
+CODE }
+OPTION AAA then AA then A
+OPTION A then AA then AAA
+OPTION AAA on all 3 rows
+OPTION A on all 3 rows
+ANSWER 1
+EXPLAIN row starts at 3 and counts down, and each row prints row A's. So it's an upside-down triangle: 3, then 2, then 1.
+END
+QUESTION output
+TEXT What does this print?
+CODE int count = 0;
+CODE for (int i = 0; i < 4; i++) {
+CODE     for (int j = 0; j < 6; j++) {
+CODE         count++;
+CODE     }
+CODE }
+CODE printf("%d", count);
+OPTION 10
+OPTION 24
+OPTION 6
+OPTION 4
+ANSWER 2
+EXPLAIN The inner loop runs 6 times for each of the 4 outer loops: 4 x 6 = 24. That's one visit to every square of a 4 x 6 grid.
+END
+QUESTION output
+TEXT What does this print?
+CODE int grid[2][3] = { {1, 2, 3},
+CODE                    {4, 5, 6} };
+CODE int sum = 0;
+CODE for (int r = 0; r < 2; r++) {
+CODE     sum += grid[r][2];
+CODE }
+CODE printf("%d", sum);
+OPTION 5
+OPTION 9
+OPTION 7
+OPTION 21
+ANSWER 2
+EXPLAIN Column 2 is the last column: 3 in row 0 and 6 in row 1. 3 + 6 = 9.
+END
+QUESTION bug
+TEXT This looks for three the same in a row, but reads past the edge of the grid. Click the line with the mistake.
+CODE for (int r = 0; r < ROWS; r++) {
+CODE     for (int c = 0; c < COLS; c++) {
+CODE         int v = grid[r][c];
+CODE         if (grid[r][c + 1] == v && grid[r][c + 2] == v) {
+CODE             score += v * 3;
+CODE         }
+CODE     }
+CODE }
+ANSWER 2
+EXPLAIN When c reaches the last two columns, c + 1 and c + 2 are past the end of the row. The loop should stop at c <= COLS - 3.
+END
+QUESTION choice
+TEXT In a grid with 6 columns, which limit lets you safely read `grid[r][c + 2]`?
+OPTION c < 6
+OPTION c <= 6
+OPTION c < 4
+OPTION c < 5
+ANSWER 3
+EXPLAIN The columns are 0 to 5. With c < 4 the biggest c is 3, so c + 2 is 5, the last column. That's the same as c <= COLS - 3.
+END
+QUESTION choice
+TEXT How many A's does the 7-row diamond print altogether?
+OPTION 7
+OPTION 14
+OPTION 16
+OPTION 28
+ANSWER 3
+EXPLAIN 1 + 2 + 3 + 4 + 3 + 2 + 1 = 16.
+END
+
+# ============================================================
+# Advanced lessons follow the Coding Exam 2 notes.
+# ============================================================
 LESSON 9 3 Pointers
 SUMMARY Addresses, & and *, pass by pointer, pointer arithmetic, nullptr
+# ------------------------------------------------------------
+CARD Addresses and pointers
+TEXT Every variable lives at an address in memory. `&i` gives the address of `i`.
+TEXT A pointer is a variable that stores an address. `int *ptr` is a pointer to an int. `*ptr` means "the value at that address", and you can read it or change it.
+TEXT So `ptr` is the address, and `*ptr` is the value stored there.
+CODE int i = 5;
+CODE int *ptr = &i;          // ptr holds the address of i
+CODE
+CODE printf("%d\n", *ptr);   // 5: the value at that address
+CODE *ptr = 10;              // changes i through the pointer
+CODE printf("%d\n", i);      // 10
+END
+CARD Pass by pointer
+TEXT A function normally gets a copy of each argument. If you pass an address instead, the function can use `*` to change the caller's variable.
+TEXT That's how `scanf("%d", &age)` works: it's given the address of `age` so it can store the number there.
+CODE void setToFive(int *p) {
+CODE     *p = 5;          // changes the caller's variable
+CODE }
+CODE
+CODE int main() {
+CODE     int i = 3;
+CODE     setToFive(&i);   // pass the address of i
+CODE     printf("%d\n", i);   // 5
+CODE     return 0;
+CODE }
+END
+CARD Pointer arithmetic and NULL
+TEXT An array's name is the address of its first element. Adding 1 to a pointer moves it to the next element, not the next byte, so `*(p + 2)` is the same as `p[2]`.
+TEXT A pointer that points at nothing should be set to `NULL` in C, or `nullptr` in C++. Check for it before using `*`, because reading through a null pointer crashes the program.
+CODE int arr[4] = {10, 20, 30, 40};
+CODE int *p = arr;              // same as &arr[0]
+CODE
+CODE printf("%d\n", *(p + 2));   // 30, same as arr[2]
+CODE p++;                        // now points at arr[1]
+CODE printf("%d\n", *p);         // 20
+CODE
+CODE int *nothing = NULL;        // nullptr in C++
+CODE if (nothing != NULL) {
+CODE     printf("%d\n", *nothing);
+CODE }
+END
+# ------------------------------------------------------------
+QUESTION output
+TEXT What does this print?
+CODE int i = 5, j = 10;
+CODE int *ptr = &i;
+CODE *ptr = 3;
+CODE ptr = &j;
+CODE *ptr = -2;
+CODE printf("%d %d", i, j);
+OPTION 3 -2
+OPTION 5 10
+OPTION -2 -2
+OPTION 3 10
+ANSWER 1
+EXPLAIN *ptr = 3 changes i, because ptr points at i. Then ptr is moved to j, so *ptr = -2 changes j.
+END
+QUESTION choice
+TEXT If `ptr` is an `int *`, what does `*ptr` mean?
+OPTION The address of ptr itself
+OPTION The value stored at the address in ptr
+OPTION ptr multiplied by something
+OPTION The address that ptr holds
+ANSWER 2
+EXPLAIN * follows the address to the value stored there. ptr on its own is the address it holds, and &ptr would be the pointer's own address.
+END
+QUESTION bug
+TEXT This should add 10 to x, but x stays 5. Click the line with the mistake.
+CODE void addTen(int *p) {
+CODE     p = p + 10;
+CODE }
+CODE
+CODE int x = 5;
+CODE addTen(&x);
+CODE printf("%d", x);
+ANSWER 2
+EXPLAIN p = p + 10 moves the pointer itself, 10 ints further along memory. To change the value it points at, write *p = *p + 10;
+END
+QUESTION output
+TEXT What does this print?
+CODE int arr[5] = {3, 6, 9, 12, 15};
+CODE int *p = arr + 1;
+CODE printf("%d %d", *p, *(p + 2));
+OPTION 6 12
+OPTION 3 9
+OPTION 4 6
+OPTION 6 9
+ANSWER 1
+EXPLAIN arr + 1 points at arr[1], which is 6. p + 2 is two elements further on, arr[3], which is 12.
+END
+QUESTION choice
+TEXT What should a pointer be set to when it doesn't point at anything yet?
+OPTION 0x1
+OPTION NULL (nullptr in C++)
+OPTION The address of main
+OPTION -1
+ANSWER 2
+EXPLAIN NULL (or nullptr) means "points at nothing", and you can check for it with if (p != NULL). A pointer that's never set holds a random address.
+END
+QUESTION bug
+TEXT This should print 21 but prints a big strange number. Click the line with the mistake.
+CODE int age = 20;
+CODE int *p = &age;
+CODE *p = *p + 1;
+CODE printf("%d", p);
+ANSWER 4
+EXPLAIN p is the address, not the value. To print the value at the address, use *p: printf("%d", *p);
+END
+
+# ============================================================
 LESSON 10 3 Memory management
 SUMMARY Stack and heap, new and delete, malloc and free, leaks
+# ------------------------------------------------------------
+CARD The stack and the heap
+TEXT Ordinary local variables live on the stack. They're removed automatically when their function or block ends, so a pointer to one isn't safe afterwards.
+TEXT Memory from `new` lives on the heap. It stays until you give it back with `delete`, so a function can return a pointer to it.
+TEXT These lessons use C++, so output uses `cout << x << endl;` instead of `printf`.
+CODE int *makeFive() {
+CODE     int *x = new int;     // on the heap
+CODE     *x = 5;
+CODE     return x;             // still there after return
+CODE }
+CODE
+CODE int main() {
+CODE     int *p = makeFive();
+CODE     cout << *p << endl;   // 5
+CODE     delete p;             // give the memory back
+CODE }
+END
+CARD Arrays, malloc and free
+TEXT `new int[5]` makes an array on the heap, and it must be freed with `delete[]`, not plain `delete`.
+TEXT In C you use `malloc` and `free` instead. `malloc` takes a number of bytes, so multiply by `sizeof`. It returns `NULL` if there's no memory left, so check it.
+CODE // C++
+CODE int *nums = new int[5];
+CODE nums[0] = 7;
+CODE delete[] nums;     // [] because it was new[]
+CODE
+CODE // C
+CODE int *vals = malloc(5 * sizeof(int));
+CODE if (vals == NULL) {
+CODE     printf("Out of memory\n");
+CODE     return 1;
+CODE }
+CODE vals[0] = 7;
+CODE free(vals);
+END
+CARD Leaks and dangling pointers
+TEXT A memory leak is heap memory that's never freed and that you've lost the pointer to. The program keeps using more memory the longer it runs.
+TEXT A dangling pointer points at memory that's already been freed. Using it gives rubbish or a crash. Setting the pointer to `nullptr` after `delete` stops it being used by mistake.
+CODE // Leak: three ints made, only the last freed
+CODE int *p;
+CODE for (int i = 0; i < 3; i++) {
+CODE     p = makeFive();
+CODE }
+CODE delete p;     // the first two are lost
+CODE
+CODE // Dangling: avoid by setting to nullptr
+CODE int *q = new int(8);
+CODE delete q;
+CODE q = nullptr;
+END
+# ------------------------------------------------------------
+QUESTION choice
+TEXT Where does `int *x = new int;` get its memory from?
+OPTION The stack
+OPTION The heap
+OPTION The program's code
+OPTION A file on the disk
+ANSWER 2
+EXPLAIN new allocates on the heap. That memory stays until you delete it, unlike stack variables, which go when their block ends.
+END
+QUESTION choice
+TEXT How should you free `int *nums = new int[10];`?
+OPTION delete nums;
+OPTION delete[] nums;
+OPTION free(nums);
+OPTION Nothing: it's freed automatically
+ANSWER 2
+EXPLAIN Memory from new[] must be freed with delete[]. free only goes with malloc, and plain delete only goes with plain new.
+END
+QUESTION output
+TEXT What does this print?
+CODE int *a = new int(3);
+CODE int *b = a;
+CODE *b = 7;
+CODE cout << *a << endl;
+CODE delete a;
+OPTION 3
+OPTION 7
+OPTION 10
+OPTION An address
+ANSWER 2
+EXPLAIN b = a copies the address, so both point at the same int. Changing *b changes the value a points at too.
+END
+QUESTION bug
+TEXT This uses memory after it's been freed. Click the line with the mistake.
+CODE int *p = new int(5);
+CODE int *q = p;
+CODE delete p;
+CODE cout << *q << endl;
+ANSWER 4
+EXPLAIN q points at the same memory as p, and that memory was deleted on line 3. Reading *q uses a dangling pointer.
+END
+QUESTION bug
+TEXT This should make room for 5 ints, but it doesn't allocate enough. Click the line with the mistake.
+CODE int *vals = malloc(5);
+CODE for (int i = 0; i < 5; i++) {
+CODE     vals[i] = i;
+CODE }
+CODE free(vals);
+ANSWER 1
+EXPLAIN malloc counts bytes, so malloc(5) is only 5 bytes. 5 ints need malloc(5 * sizeof(int)), which is usually 20 bytes.
+END
+QUESTION choice
+TEXT What is a memory leak?
+OPTION Reading past the end of an array
+OPTION Using a variable before giving it a value
+OPTION Heap memory that's never freed and can't be reached
+OPTION A local variable going out of scope
+ANSWER 3
+EXPLAIN If you lose the last pointer to heap memory without freeing it, nothing can ever free it. The program keeps that memory until it ends.
+END
+
+# ============================================================
 LESSON 11 3 Linked lists
 SUMMARY Nodes, inserting, traversing and deleting, doubly linked lists
+# ------------------------------------------------------------
+CARD Nodes
+TEXT A linked list is a chain of nodes. Each node holds some data and a pointer to the next node. The last node's pointer is `nullptr`, which marks the end. We keep a pointer to the first node, called the head.
+TEXT To go through a list, start at the head and follow `nextPtr` until you reach `nullptr`. `cur->data` is short for `(*cur).data`.
+CODE struct Node {
+CODE     int data;
+CODE     Node *nextPtr;     // next node, or nullptr at the end
+CODE };
+CODE
+CODE Node *headPtr = nullptr;   // an empty list
+CODE
+CODE void PrintList(Node *headPtr) {
+CODE     Node *cur = headPtr;
+CODE     while (cur != nullptr) {
+CODE         cout << cur->data << " ";
+CODE         cur = cur->nextPtr;
+CODE     }
+CODE }
+END
+CARD Adding to the end
+TEXT Unlike an array, the nodes can be anywhere in memory, and the list grows one node at a time with `new`.
+TEXT To add at the end, make the new node, then walk to the last node and link it on. `InsertAtEnd` takes `Node **` (the address of the head pointer) because if the list is empty, it has to change the head itself.
+CODE void InsertAtEnd(Node **ptrToHeadPtr, int newData) {
+CODE     Node *newNode = new Node();
+CODE     newNode->data = newData;
+CODE     newNode->nextPtr = nullptr;
+CODE     if (*ptrToHeadPtr == nullptr) {
+CODE         *ptrToHeadPtr = newNode;
+CODE         return;
+CODE     }
+CODE     Node *cur = *ptrToHeadPtr;
+CODE     while (cur->nextPtr != nullptr) cur = cur->nextPtr;
+CODE     cur->nextPtr = newNode;
+CODE }
+END
+CARD Front, delete and doubly linked
+TEXT To add at the front, point the new node at the old head, then make it the head. To delete the first node, move the head on first, then delete the old node.
+TEXT In a doubly linked list each node also has `prevPtr`, so you can go backwards too.
+CODE // Add at the front
+CODE Node *n = new Node();
+CODE n->data = 5;
+CODE n->nextPtr = headPtr;
+CODE headPtr = n;
+CODE
+CODE // Delete the first node
+CODE Node *old = headPtr;
+CODE headPtr = headPtr->nextPtr;
+CODE delete old;
+CODE
+CODE struct DNode {
+CODE     int data;
+CODE     DNode *prevPtr;
+CODE     DNode *nextPtr;
+CODE };
+END
+# ------------------------------------------------------------
+QUESTION choice
+TEXT How do you know you've reached the end of a linked list?
+OPTION The node's data is 0
+OPTION The node's nextPtr is nullptr
+OPTION The head pointer is nullptr
+OPTION You've visited size nodes
+ANSWER 2
+EXPLAIN The last node's nextPtr is nullptr. A list doesn't store its size, and a head of nullptr means the whole list is empty.
+END
+QUESTION output
+TEXT InsertAtFront puts each new node before the current head. What does this print?
+CODE Node *headPtr = nullptr;
+CODE InsertAtFront(&headPtr, 10);
+CODE InsertAtFront(&headPtr, 20);
+CODE InsertAtFront(&headPtr, 30);
+CODE PrintList(headPtr);
+OPTION 10 20 30
+OPTION 30 20 10
+OPTION 30
+OPTION 10
+ANSWER 2
+EXPLAIN Each new node goes in front, so the last one added (30) ends up first, and the first one added (10) ends up last.
+END
+QUESTION bug
+TEXT This never prints the last node, and crashes on an empty list. Click the line with the mistake.
+CODE void PrintList(Node *headPtr) {
+CODE     Node *cur = headPtr;
+CODE     while (cur->nextPtr != nullptr) {
+CODE         cout << cur->data << " ";
+CODE         cur = cur->nextPtr;
+CODE     }
+CODE }
+ANSWER 3
+EXPLAIN The loop stops when cur is on the last node, before printing it. If headPtr is nullptr, cur->nextPtr crashes. The condition should be cur != nullptr.
+END
+QUESTION bug
+TEXT This deletes the first node in the wrong order. Click the line that uses memory after it's been deleted.
+CODE Node *old = headPtr;
+CODE delete old;
+CODE headPtr = headPtr->nextPtr;
+ANSWER 3
+EXPLAIN old and headPtr point at the same node, which line 2 deleted. Reading headPtr->nextPtr afterwards uses freed memory. Move the head on first, then delete.
+END
+QUESTION output
+TEXT The list is 4 -> 8 -> 15 -> 16. What does this print?
+CODE int count = 0, sum = 0;
+CODE Node *cur = headPtr;
+CODE while (cur != nullptr) {
+CODE     count++;
+CODE     sum += cur->data;
+CODE     cur = cur->nextPtr;
+CODE }
+CODE cout << count << " " << sum;
+OPTION 4 43
+OPTION 3 27
+OPTION 4 16
+OPTION 43 4
+ANSWER 1
+EXPLAIN The loop visits all 4 nodes, adding 4 + 8 + 15 + 16 = 43.
+END
+QUESTION choice
+TEXT Why does InsertAtEnd take a `Node **` rather than a `Node *`?
+OPTION For an empty list it must change the head itself
+OPTION Because the nodes are on the heap
+OPTION It makes the loop faster
+OPTION A Node * can't be passed to a function
+ANSWER 1
+EXPLAIN With Node * the function gets a copy of the head pointer, so setting it wouldn't change the caller's head. With the address of the head, *ptrToHeadPtr = newNode changes the real one.
+END
+QUESTION choice
+TEXT What does a doubly linked list node have that a singly linked one doesn't?
+OPTION A second data field
+OPTION A pointer to the previous node
+OPTION A pointer to the head
+OPTION A count of the nodes
+ANSWER 2
+EXPLAIN Each node has prevPtr as well as nextPtr, so you can walk the list in both directions.
+END
+
+# ============================================================
 LESSON 12 3 Classes
 SUMMARY Fields, methods, constructors, access, copy constructors, destructors
+# ------------------------------------------------------------
+CARD Classes and objects
+TEXT A class groups data (fields) and the functions that work on it (methods). Each object, or instance, of the class has its own copy of the fields.
+TEXT Fields under `private:` can only be used by the class's own methods. Other code uses public methods such as getters and setters instead.
+CODE class Point {
+CODE public:
+CODE     double getX() { return x; }
+CODE     void setX(double newX) { x = newX; }
+CODE     void offset(double dx, double dy) {
+CODE         x += dx;
+CODE         y += dy;
+CODE     }
+CODE private:
+CODE     double x = 0, y = 0;
+CODE };
+CODE
+CODE Point p;
+CODE p.setX(2.0);
+CODE p.offset(1.0, 1.0);
+CODE cout << p.getX();   // 3
+END
+CARD Constructors
+TEXT A constructor has the same name as the class and no return type. It runs when an object is made, to set up its fields. A class can have several, with different parameters.
+TEXT A method can be written outside the class using `ClassName::`, which says which class the method belongs to.
+CODE class Point {
+CODE public:
+CODE     Point() { x = 0; y = 0; }      // default
+CODE     Point(double px, double py) { x = px; y = py; }
+CODE     void print();
+CODE private:
+CODE     double x, y;
+CODE };
+CODE
+CODE void Point::print() {
+CODE     cout << x << ", " << y << endl;
+CODE }
+CODE
+CODE Point a;            // default constructor: 0, 0
+CODE Point b(2.0, 3.0);  // 2-parameter constructor
+END
+CARD Copy constructors and destructors
+TEXT A copy constructor runs when an object is made from another, as in `Buffer b2 = b1;`. The default one copies each field, so two objects would share the same array.
+TEXT A destructor, `~ClassName()`, runs when an object goes out of scope or is deleted. It's where you free memory the object made with `new`.
+CODE class Buffer {
+CODE public:
+CODE     Buffer(int n) { size = n; data = new int[n]; }
+CODE     Buffer(const Buffer &other) {     // copy constructor
+CODE         size = other.size;
+CODE         data = new int[size];         // its own array
+CODE         for (int i = 0; i < size; i++)
+CODE             data[i] = other.data[i];
+CODE     }
+CODE     ~Buffer() { delete[] data; }      // destructor
+CODE private:
+CODE     int size;
+CODE     int *data;
+CODE };
+END
+# ------------------------------------------------------------
+QUESTION choice
+TEXT What does `private:` mean for the fields below it?
+OPTION They can't be changed after the constructor
+OPTION Only the class's own methods can use them
+OPTION They're shared by every object of the class
+OPTION They're hidden from the class's own methods
+ANSWER 2
+EXPLAIN Private members can be used inside the class's methods but not from outside, such as in main. Outside code goes through public methods instead.
+END
+QUESTION output
+TEXT What does this print?
+CODE class Counter {
+CODE public:
+CODE     Counter() { count = 0; }
+CODE     void add() { count++; }
+CODE     int get() { return count; }
+CODE private:
+CODE     int count;
+CODE };
+CODE
+CODE Counter c;
+CODE c.add();
+CODE c.add();
+CODE c.add();
+CODE cout << c.get();
+OPTION 0
+OPTION 3
+OPTION 1
+OPTION It won't compile
+ANSWER 2
+EXPLAIN The constructor sets count to 0, and each add() adds 1. get() is public, so main can read the private count through it.
+END
+QUESTION bug
+TEXT This won't compile. Click the line with the mistake.
+CODE class Point {
+CODE public:
+CODE     Point(double px, double py) { x = px; y = py; }
+CODE private:
+CODE     double x, y;
+CODE };
+CODE
+CODE Point p(1.0, 2.0);
+CODE p.x = 5.0;
+ANSWER 9
+EXPLAIN x is private, so code outside the class can't use it. Add a public setter such as setX and call p.setX(5.0) instead.
+END
+QUESTION output
+TEXT Using the Point class from the first card, what does this print?
+CODE void offsetPoint(Point p, double dx, double dy) {
+CODE     p.offset(dx, dy);
+CODE }
+CODE
+CODE Point p;              // starts at 0, 0
+CODE offsetPoint(p, 1.0, 2.0);
+CODE cout << p.getX();
+OPTION 1
+OPTION 0
+OPTION 3
+OPTION It won't compile
+ANSWER 2
+EXPLAIN Objects are passed by value too, so offsetPoint moves a copy. To change the real one, take a reference: void offsetPoint(Point &p, ...).
+END
+QUESTION bug
+TEXT This won't compile: print can't see x and y. Click the line with the mistake.
+CODE class Point {
+CODE public:
+CODE     void print();
+CODE private:
+CODE     double x = 0, y = 0;
+CODE };
+CODE
+CODE void print() {
+CODE     cout << x << ", " << y << endl;
+CODE }
+ANSWER 8
+EXPLAIN Without Point:: this is a separate function, not Point's print method, so x and y don't exist there. It should be void Point::print().
+END
+QUESTION choice
+TEXT When does an object's destructor run?
+OPTION When the object is made
+OPTION When it goes out of scope or is deleted
+OPTION Only when you call it yourself
+OPTION When the program starts
+ANSWER 2
+EXPLAIN The destructor runs automatically at the end of the object's life: when it goes out of scope, or when delete is used on it.
+END
+QUESTION choice
+TEXT Why does Buffer need its own copy constructor?
+OPTION The default copy shares the array, so both delete it
+OPTION Classes can't be copied without one
+OPTION To make copying faster
+OPTION So that the size can't be changed
+ANSWER 1
+EXPLAIN The default copy constructor copies the data pointer, not the array. Both objects would point at the same array, and both destructors would delete it.
+END

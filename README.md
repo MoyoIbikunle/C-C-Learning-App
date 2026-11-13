@@ -28,7 +28,13 @@ Run `cquest.exe` from this folder; it needs the `content` and `assets` folders n
   attempt at each lesson counts, so points can't be farmed by repeating lessons.
 - **Badges**: 7 to earn, each worth 25 bonus points.
 
-In this version the four Beginner lessons are written; the others show as "Coming soon".
+All 12 lessons are written, with 76 questions in total:
+
+- **Beginner** (Intro to C notes): First programs, Variables and maths, Decisions and loops, Arrays and strings
+- **Intermediate** (Lab 1): Functions, Number problems, Array problems, Patterns and grids
+- **Advanced** (Coding Exam 2 notes): Pointers, Memory management, Linked lists, Classes
+
+The Advanced lessons use C++ for `new`, `delete`, `nullptr` and classes.
 The Practise and Teach tabs are planned for later.
 
 ## Files

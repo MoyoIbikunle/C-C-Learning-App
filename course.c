@@ -182,30 +182,40 @@ int loadCourse(const char *filename, Course *course, char *error, int errorSize)
                 break;
             }
         }
-        else if ((rest = after(line, "TEXT")) != NULL)
+        else if ((rest = after(line, "TEXT")) != NULL && (card != NULL || q != NULL))
         {
-            if (card != NULL && card->textCount < MAX_PARAS)
+            if (card != NULL && card->textCount >= MAX_PARAS)
+            {
+                snprintf(error, errorSize, "Line %d: too many TEXT lines (max %d)", lineNo, MAX_PARAS);
+                break;
+            }
+            if (card != NULL)
             {
                 copyText(card->text[card->textCount++], rest, TEXT_LEN);
             }
-            else if (q != NULL)
+            else
             {
                 copyText(q->text, rest, TEXT_LEN);
             }
         }
-        else if ((rest = after(line, "CODE")) != NULL)
+        else if ((rest = after(line, "CODE")) != NULL && (card != NULL || q != NULL))
         {
-            if (card != NULL && card->codeCount < MAX_CODE)
+            int *count = (card != NULL) ? &card->codeCount : &q->codeCount;
+            if (*count >= MAX_CODE)
             {
-                copyText(card->code[card->codeCount++], rest, LINE_LEN);
+                snprintf(error, errorSize, "Line %d: too many CODE lines (max %d)", lineNo, MAX_CODE);
+                break;
             }
-            else if (q != NULL && q->codeCount < MAX_CODE)
-            {
-                copyText(q->code[q->codeCount++], rest, LINE_LEN);
-            }
+            char (*code)[LINE_LEN] = (card != NULL) ? card->code : q->code;
+            copyText(code[(*count)++], rest, LINE_LEN);
         }
-        else if ((rest = after(line, "OPTION")) != NULL && q != NULL && q->optionCount < MAX_OPTIONS)
+        else if ((rest = after(line, "OPTION")) != NULL && q != NULL)
         {
+            if (q->optionCount >= MAX_OPTIONS)
+            {
+                snprintf(error, errorSize, "Line %d: too many OPTION lines (max %d)", lineNo, MAX_OPTIONS);
+                break;
+            }
             copyText(q->options[q->optionCount++], rest, LINE_LEN);
         }
         else if ((rest = after(line, "ANSWER")) != NULL && q != NULL)
