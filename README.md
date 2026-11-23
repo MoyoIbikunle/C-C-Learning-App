@@ -35,8 +35,11 @@ Run `cquest.exe` from the w64devkit terminal in this folder. It needs the `conte
   - *Quick quiz*: 10 random questions mixed from the lessons you've passed
   - *Review my mistakes*: every question you've got wrong, from all lessons, practice and exams,
     in one go; each one stays until you get it right first time
-  - *Exam mode*: 20 questions in 20 minutes, one answer each, marked at the end, then
-    you can step through your answers. Your best score is saved, and 90%+ earns Exam Ace.
+  - *Exam mode*: like the coding exams: 15 questions and one coding task in 25 minutes,
+    all marked at the end. The coding task is a random exercise from a lesson you've passed;
+    you can press Run to see compile errors and output, and when you finish, its hidden tests
+    mark it out of 5 (a share for the checks that pass). Then you can step through your answers,
+    your code and the model answer. Your best score is saved, and 90%+ earns Exam Ace.
   - In Quick quiz and Review, each question links back to its lesson's cards, and the results
     list the topics you got wrong.
 - **Code tab**: write and run real C and C++ in a built-in editor (line numbers, coloured

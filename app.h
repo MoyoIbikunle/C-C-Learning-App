@@ -140,8 +140,10 @@ int currentStreak(const Learner *learner, int today);
 /* ---------- Practice ---------- */
 
 #define QUICK_QUESTIONS 10
-#define EXAM_QUESTIONS 20
-#define EXAM_SECONDS (20 * 60)
+#define EXAM_QUESTIONS 15         /* questions in an exam... */
+#define EXAM_CODE_MARKS 5         /* ...plus one coding task worth this many marks */
+#define EXAM_FULL_MARKS (EXAM_QUESTIONS + EXAM_CODE_MARKS)
+#define EXAM_SECONDS (25 * 60)
 #define EXAM_ACE_PERCENT 90
 #define MAX_POOL (MAX_LESSONS * MAX_QUESTIONS)
 
@@ -166,6 +168,7 @@ int missedCount(const Learner *learner);
 int topicPercent(const Learner *learner, int lesson);
 int weakestTopics(const Learner *learner, const Course *course, int *out, int max);
 unsigned finishExam(Learner *learner, int right, int total, bool *newBest);
+int codeMarks(int checksPassed, int checkCount, int maxMarks);
 
 /* ---------- Teach: help the duck ---------- */
 

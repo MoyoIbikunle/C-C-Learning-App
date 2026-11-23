@@ -102,8 +102,9 @@ int missedCount(const Learner *learner)
     return n;
 }
 
-/* Saves the exam score if it's the best yet. A full-length exam at 90%+
-   earns Exam Ace. Returns the badges earned for the first time. */
+/* Saves the exam score if it's the best yet. A full exam (all the
+   questions and the coding task) at 90%+ earns Exam Ace. Returns the
+   badges earned for the first time. */
 unsigned finishExam(Learner *learner, int right, int total, bool *newBest)
 {
     int percent = (total > 0) ? right * 100 / total : 0;
@@ -114,7 +115,7 @@ unsigned finishExam(Learner *learner, int right, int total, bool *newBest)
     }
 
     unsigned before = learner->badges;
-    if (total >= EXAM_QUESTIONS && percent >= EXAM_ACE_PERCENT)
+    if (total >= EXAM_FULL_MARKS && percent >= EXAM_ACE_PERCENT)
     {
         learner->badges |= 1u << BADGE_EXAM_ACE;
     }
@@ -165,4 +166,19 @@ int weakestTopics(const Learner *learner, const Course *course, int *out, int ma
         out[i] = list[i];
     }
     return n;
+}
+
+/* Marks for the exam's coding task: a share of maxMarks for the checks
+   that passed, rounded to the nearest mark. 4 of 6 checks = 3 of 5 marks. */
+int codeMarks(int checksPassed, int checkCount, int maxMarks)
+{
+    if (checkCount <= 0 || checksPassed <= 0)
+    {
+        return 0;
+    }
+    if (checksPassed >= checkCount)
+    {
+        return maxMarks;
+    }
+    return (maxMarks * checksPassed * 2 + checkCount) / (checkCount * 2);
 }

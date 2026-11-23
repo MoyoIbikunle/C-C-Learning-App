@@ -297,6 +297,16 @@ static void testPractice(void)
     got = finishExam(&l, 19, 20, &best);
     CHECK(got == 0);   /* badge only given once */
 
+    /* Coding task marks: a share of 5 for the checks passed, rounded */
+    CHECK(EXAM_FULL_MARKS == 20);
+    CHECK(codeMarks(6, 6, 5) == 5);
+    CHECK(codeMarks(4, 6, 5) == 3);   /* 3.33 rounds to 3 */
+    CHECK(codeMarks(3, 4, 5) == 4);   /* 3.75 rounds to 4 */
+    CHECK(codeMarks(1, 2, 5) == 3);   /* 2.5 rounds up */
+    CHECK(codeMarks(1, 6, 5) == 1);
+    CHECK(codeMarks(0, 6, 5) == 0);
+    CHECK(codeMarks(0, 0, 5) == 0);   /* didn't compile: no checks ran */
+
     /* Mistakes and exam score survive saving and loading */
     CHECK(saveLearners("test_learners.txt", &l, 1));
     Learner back[MAX_LEARNERS];

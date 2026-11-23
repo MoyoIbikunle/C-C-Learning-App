@@ -84,6 +84,15 @@ static int mistakesCleared = 0;     /* in a review */
 
 /* Exam mode */
 static int examPicks[EXAM_QUESTIONS];   /* answer picked for each question, 0 = none */
+static int examExercise = -1;           /* the exam's coding task, -1 = none */
+static bool examCodeStarted = false;    /* the coding page has been opened */
+static bool examCodeMarked = false;
+static int examCodeMarks = 0;           /* out of EXAM_CODE_MARKS */
+static int examChecksPassed = 0;
+static int examChecksTotal = 0;
+static bool examCodeRan = false;        /* the marking run happened (so there are results to show) */
+static int examMarks = 0;               /* questions right + coding marks... */
+static int examFullMarks = 0;           /* ...out of this */
 static double examStart = 0;
 static int examSeconds = 0;         /* time taken */
 static int examRight = 0;
@@ -125,6 +134,12 @@ static char glossaryQuery[40] = "";
 static float glossaryScroll = 0;
 
 /* Code tab */
+typedef enum {
+    EDIT_PRACTICE,                      /* an exercise or the playground */
+    EDIT_EXAM,                          /* the exam's coding task, being written */
+    EDIT_EXAM_REVIEW                    /* looking back at it after the exam */
+} EditorMode;
+static EditorMode editorMode = EDIT_PRACTICE;
 static ExerciseList exercises;
 static char exerciseError[200] = "";
 static int exerciseIndex = -1;            /* -1 = the playground */
@@ -811,6 +826,8 @@ static QuestionRef currentRef(void)
 static void finishQuiz(void);
 static void finishPractice(void);
 static void finishExamRun(void);
+static void enterExamCoding(void);
+static void openExamCodeReview(void);
 
 /* In an exam review, show the learner's own answer against the right one */
 static void showExamAnswer(void)
@@ -852,6 +869,23 @@ static void startRun(RunKind kind)
     if (kind == RUN_EXAM)
     {
         examStart = GetTime();
+
+        /* One coding task, from the exercises for lessons already passed */
+        int open[MAX_EXERCISES], openCount = 0;
+        for (int i = 0; i < exercises.count; i++)
+        {
+            if (exerciseUnlocked(current(), exerciseAt(&exercises, i)))
+            {
+                open[openCount++] = i;
+            }
+        }
+        examExercise = openCount > 0 ? open[rand() % openCount] : -1;
+        examCodeStarted = false;
+        examCodeMarked = false;
+        examCodeRan = false;
+        examCodeMarks = 0;
+        examChecksPassed = 0;
+        examChecksTotal = 0;
     }
     screen = SCREEN_QUIZ;
 }
@@ -932,6 +966,36 @@ static void finishPractice(void)
 }
 
 /* Marks the exam: every unanswered or wrong question goes into the review list */
+/* Runs the exam's coding task against its hidden tests and works out its marks */
+static void markExamCode(void)
+{
+    if (examExercise < 0 || examCodeMarked)
+    {
+        return;
+    }
+    const Exercise *ex = exerciseAt(&exercises, examExercise);
+    examCodeMarked = true;
+    examChecksTotal = ex->expectCount;
+    examChecksPassed = 0;
+    examCodeRan = false;
+    if (!examCodeStarted)
+    {
+        examCodeMarks = 0;   /* never opened the coding task */
+        return;
+    }
+    static char code[TB_LINES * TB_COLS];
+    static char program[TB_LINES * TB_COLS + CODE_TEXT_LEN + 1000];
+    tbGetText(&editor, code, sizeof(code));
+    buildProgram(code, ex->tests, ex->cpp, program, sizeof(program));
+    runCode(program, ex->cpp, RUN_TIME_LIMIT_MS, &runResult);
+    examCodeRan = true;
+    if (runResult.status == RUN_OK)
+    {
+        examChecksPassed = checkOutput(ex, runResult.output, checks);
+    }
+    examCodeMarks = codeMarks(examChecksPassed, examChecksTotal, EXAM_CODE_MARKS);
+}
+
 static void finishExamRun(void)
 {
     double used = GetTime() - examStart;
@@ -949,8 +1013,13 @@ static void finishExamRun(void)
             examRight++;
         }
     }
-    newBadges = finishExam(current(), examRight, runCount, &examNewBest);
-    recordAttempt(ATTEMPT_EXAM, -1, examRight, runCount, runCount > 0 ? examRight * 100 / runCount : 0);
+    /* The coding task: marked by its hidden tests */
+    markExamCode();
+    examMarks = examRight + examCodeMarks;
+    examFullMarks = runCount + (examExercise >= 0 ? EXAM_CODE_MARKS : 0);
+
+    newBadges = finishExam(current(), examMarks, examFullMarks, &examNewBest);
+    recordAttempt(ATTEMPT_EXAM, -1, examMarks, examFullMarks, examFullMarks > 0 ? examMarks * 100 / examFullMarks : 0);
     didActivity();
     save();
     screen = SCREEN_EXAM_RESULTS;
@@ -971,8 +1040,28 @@ static void nextQuestion(void)
     switch (runKind)
     {
         case RUN_LESSON:      finishQuiz(); break;
-        case RUN_EXAM:        finishExamRun(); break;
-        case RUN_EXAM_REVIEW: screen = SCREEN_EXAM_RESULTS; break;
+        case RUN_EXAM:
+            if (examExercise >= 0)
+            {
+                questionIndex = runCount - 1;   /* Back from the coding task returns here */
+                enterExamCoding();
+            }
+            else
+            {
+                finishExamRun();
+            }
+            break;
+        case RUN_EXAM_REVIEW:
+            if (examExercise >= 0)
+            {
+                questionIndex = runCount - 1;
+                openExamCodeReview();
+            }
+            else
+            {
+                screen = SCREEN_EXAM_RESULTS;
+            }
+            break;
         default:              finishPractice(); break;
     }
 }
@@ -1144,7 +1233,8 @@ static void screenQuiz(void)
     bool exam = runKind == RUN_EXAM;
 
     char step[40];
-    snprintf(step, sizeof(step), "Question %d of %d", questionIndex + 1, runCount);
+    bool withCode = (runKind == RUN_EXAM || runKind == RUN_EXAM_REVIEW) && examExercise >= 0;
+    snprintf(step, sizeof(step), "Question %d of %d", questionIndex + 1, runCount + (withCode ? 1 : 0));
     lessonBar(step);
 
     /* Progress bar and the status on the right */
@@ -1235,8 +1325,12 @@ static void screenQuiz(void)
             questionIndex--;
         }
         bool picked = examPicks[questionIndex] != 0;
-        if (button(next, last ? "Finish exam" : (picked ? "Next" : "Skip"), BTN_PRIMARY, true) ||
-            (IsKeyPressed(KEY_ENTER) && picked))
+        const char *label = picked ? "Next" : "Skip";
+        if (last)
+        {
+            label = examExercise >= 0 ? "Next: coding task" : "Finish exam";
+        }
+        if (button(next, label, BTN_PRIMARY, true) || (IsKeyPressed(KEY_ENTER) && picked))
         {
             nextQuestion();
         }
@@ -1254,7 +1348,14 @@ static void screenQuiz(void)
         const char *label = "Next question";
         if (last)
         {
-            label = runKind == RUN_EXAM_REVIEW ? "Back to results" : "See results";
+            if (runKind == RUN_EXAM_REVIEW)
+            {
+                label = examExercise >= 0 ? "Next: your code" : "Back to results";
+            }
+            else
+            {
+                label = "See results";
+            }
         }
         if (runKind == RUN_EXAM_REVIEW)
         {
@@ -1334,7 +1435,7 @@ static void screenPractise(void)
     }
     else if (examSize < EXAM_QUESTIONS)
     {
-        snprintf(stat[2], sizeof(stat[2]), "Pass more lessons for a full exam (%d questions for now).%s",
+        snprintf(stat[2], sizeof(stat[2]), "Pass more lessons for a full exam (%d questions and a coding task for now).%s",
                  examSize, bestText);
     }
     else
@@ -1349,8 +1450,8 @@ static void screenPractise(void)
     practiseCard((Rectangle){ 60 + w + gap, top, w, h }, "!", COL_BAD, "Review my mistakes",
                  "Every question you've got wrong, from all your lessons, in one go. Each stays here until you get it right first time.",
                  stat[1], "Start review", toReview > 0, RUN_REVIEW);
-    practiseCard((Rectangle){ 60 + 2 * (w + gap), top, w, h }, "20", COL_GOLD, "Exam mode",
-                 "20 questions in 20 minutes, one answer each. No hints: it's all marked at the end.",
+    practiseCard((Rectangle){ 60 + 2 * (w + gap), top, w, h }, "25", COL_GOLD, "Exam mode",
+                 "15 questions and a coding task in 25 minutes, like the coding exams. No hints: it's all marked at the end.",
                  stat[2], "Start exam", available > 0, RUN_EXAM);
 }
 
@@ -1449,7 +1550,7 @@ static void drawNewBadges(Rectangle box, float y);
 static void screenExamResults(void)
 {
     header();
-    int percent = runCount > 0 ? examRight * 100 / runCount : 0;
+    int percent = examFullMarks > 0 ? examMarks * 100 / examFullMarks : 0;
     char centre[20], line[140];
     snprintf(centre, sizeof(centre), "%d%%", percent);
 
@@ -1458,7 +1559,15 @@ static void screenExamResults(void)
                                 "Exam mode", percent, percent >= PASS_PERCENT ? COL_GOOD : COL_GOLD, centre);
 
     float y = box.y + 290;
-    snprintf(line, sizeof(line), "%d of %d right in %d:%02d", examRight, runCount, examSeconds / 60, examSeconds % 60);
+    if (examExercise >= 0)
+    {
+        snprintf(line, sizeof(line), "Questions %d of %d   -   Coding task %d of %d marks   -   %d:%02d",
+                 examRight, runCount, examCodeMarks, EXAM_CODE_MARKS, examSeconds / 60, examSeconds % 60);
+    }
+    else
+    {
+        snprintf(line, sizeof(line), "%d of %d right in %d:%02d", examRight, runCount, examSeconds / 60, examSeconds % 60);
+    }
     drawTextCentred(line, (Rectangle){ box.x, y, box.width, 26 }, 20, FONT_BOLD, COL_INK);
     if (examNewBest)
     {
@@ -2043,6 +2152,7 @@ static void saveDraft(void)
 
 static void openEditor(int index)
 {
+    editorMode = EDIT_PRACTICE;
     exerciseIndex = index;
     int slot = index < 0 ? PLAYGROUND : index;
     if (hasDraft[slot])
@@ -2137,7 +2247,10 @@ static void runEditorCode(void)
     static char code[TB_LINES * TB_COLS];
     static char program[TB_LINES * TB_COLS + CODE_TEXT_LEN + 1000];
     tbGetText(&editor, code, sizeof(code));
-    saveDraft();
+    if (editorMode == EDIT_PRACTICE)
+    {
+        saveDraft();
+    }
 
     const Exercise *ex = exerciseIndex >= 0 ? exerciseAt(&exercises, exerciseIndex) : NULL;
     bool cpp = ex != NULL ? ex->cpp : playgroundCpp;
@@ -2145,6 +2258,10 @@ static void runEditorCode(void)
     runCode(program, cpp, RUN_TIME_LIMIT_MS, &runResult);
     hasResult = true;
     justSolvedFirst = false;
+    if (editorMode == EDIT_EXAM)
+    {
+        return;   /* in the exam you see the output, but it's only marked at the end */
+    }
 
     if (ex != NULL && runResult.status == RUN_OK)
     {
@@ -2261,7 +2378,7 @@ static void drawResults(Rectangle r, const Exercise *ex)
     snprintf(title, sizeof(title), all ? "All %d checks passed!" : "%d of %d checks passed", all ? ex->expectCount : checksPassed,
              ex->expectCount);
     drawText(title, x, y, 19, FONT_BOLD, all ? COL_GOOD : COL_INK);
-    if (all)
+    if (all && editorMode == EDIT_PRACTICE)
     {
         drawText(justSolvedFirst ? "+30 points. Nice work!" : "You've solved this one before. Nice work!",
                  x + textWidth(title, 19, FONT_BOLD) + 16, y + 2, 16, FONT_REGULAR, COL_GOOD);
@@ -2293,8 +2410,54 @@ static void drawResults(Rectangle r, const Exercise *ex)
     }
 }
 
+/* The model answer in a pop-up over everything else */
+static void answerPopup(const Exercise *ex)
+{
+    uiBlock(false);
+    DrawRectangle(0, 0, SCREEN_W, SCREEN_H, (Color){ 20, 24, 36, 120 });
+    int count = 1;
+    for (const char *p = ex->solution; *p != '\0'; p++)
+    {
+        count += (*p == '\n' && p[1] != '\0');
+    }
+    const float lineH = 21;
+    float codeH = count * lineH + 24;
+    Rectangle box = { 240, (SCREEN_H - codeH - 150) / 2, 720, codeH + 150 };
+    panel(box, COL_PANEL);
+    drawText("One way to answer it", box.x + 28, box.y + 22, 22, FONT_BOLD, COL_INK);
+    Rectangle code = { box.x + 28, box.y + 62, box.width - 56, codeH };
+    DrawRectangleRounded(code, 0.04f, 8, COL_CODE_BG);
+    const char *p = ex->solution;
+    for (int i = 0; *p != '\0'; i++)
+    {
+        char line[120];
+        int len = (int)strcspn(p, "\n");
+        snprintf(line, sizeof(line), "%.*s", len < 119 ? len : 119, p);
+        drawCodeLine(line, code.x + 18, code.y + 12 + i * lineH, 15);
+        p += len;
+        if (*p == '\n') p++;
+    }
+    if (button((Rectangle){ box.x + 28, box.y + box.height - 66, 220, 44 }, "Put it in the editor", BTN_SECONDARY, true))
+    {
+        tbSetText(&editor, ex->solution);
+        showAnswer = false;
+        hasResult = false;
+    }
+    if (button((Rectangle){ box.x + box.width - 148, box.y + box.height - 66, 120, 44 }, "Close", BTN_PRIMARY, true) ||
+        IsKeyPressed(KEY_ESCAPE))
+    {
+        showAnswer = false;
+    }
+}
+
+static void screenExamCoding(void);
 static void screenEditor(void)
 {
+    if (editorMode != EDIT_PRACTICE)
+    {
+        screenExamCoding();
+        return;
+    }
     const Exercise *ex = exerciseIndex >= 0 ? exerciseAt(&exercises, exerciseIndex) : NULL;
 
     if (showAnswer)
@@ -2422,41 +2585,181 @@ static void screenEditor(void)
     /* The model answer, over everything else */
     if (showAnswer && ex != NULL)
     {
-        uiBlock(false);
-        DrawRectangle(0, 0, SCREEN_W, SCREEN_H, (Color){ 20, 24, 36, 120 });
-        int count = 1;
-        for (const char *p = ex->solution; *p != '\0'; p++)
+        answerPopup(ex);
+    }
+}
+
+
+/* ---------- Exam mode: the coding task ---------- */
+
+static void enterExamCoding(void)
+{
+    const Exercise *ex = exerciseAt(&exercises, examExercise);
+    exerciseIndex = examExercise;
+    editorMode = EDIT_EXAM;
+    if (!examCodeStarted)
+    {
+        tbSetText(&editor, ex->starter);
+        editorScroll = 0;
+        examCodeStarted = true;
+    }
+    hasResult = false;
+    runPending = false;
+    showAnswer = false;
+    editorFocused = true;
+    peeking = false;
+    screen = SCREEN_EDITOR;
+}
+
+/* After the exam: your code, the marks it got, and the model answer */
+static void openExamCodeReview(void)
+{
+    exerciseIndex = examExercise;
+    editorMode = EDIT_EXAM_REVIEW;
+    hasResult = examCodeRan;
+    checksPassed = examChecksPassed;
+    runPending = false;
+    showAnswer = false;
+    editorFocused = false;
+    if (!examCodeStarted)
+    {
+        tbSetText(&editor, exerciseAt(&exercises, examExercise)->starter);
+    }
+    screen = SCREEN_EDITOR;
+}
+
+static void screenExamCoding(void)
+{
+    const Exercise *ex = exerciseAt(&exercises, examExercise);
+    bool exam = editorMode == EDIT_EXAM;
+    if (ex == NULL)
+    {
+        screen = SCREEN_PRACTISE;
+        return;
+    }
+    if (exam && GetTime() - examStart >= EXAM_SECONDS)
+    {
+        finishExamRun();   /* time's up: the code is marked as it is */
+        return;
+    }
+    if (showAnswer)
+    {
+        uiBlock(true);
+    }
+    if (runPending)
+    {
+        runPending = false;
+        runEditorCode();
+    }
+
+    /* Top bar */
+    DrawRectangle(0, 0, SCREEN_W, 64, COL_PANEL);
+    DrawRectangle(0, 64, SCREEN_W, 1, COL_LINE);
+    if (button((Rectangle){ 20, 14, 170, 36 }, exam ? "< Questions" : "< Results", BTN_QUIET, true))
+    {
+        if (exam)
         {
-            count += (*p == '\n' && p[1] != '\0');
+            runKind = RUN_EXAM;
+            screen = SCREEN_QUIZ;   /* back to the last question */
         }
-        const float lineH = 21;
-        float codeH = count * lineH + 24;
-        Rectangle box = { 240, (SCREEN_H - codeH - 150) / 2, 720, codeH + 150 };
-        panel(box, COL_PANEL);
-        drawText("One way to answer it", box.x + 28, box.y + 22, 22, FONT_BOLD, COL_INK);
-        Rectangle code = { box.x + 28, box.y + 62, box.width - 56, codeH };
-        DrawRectangleRounded(code, 0.04f, 8, COL_CODE_BG);
-        const char *p = ex->solution;
-        for (int i = 0; *p != '\0'; i++)
+        else
         {
-            char line[120];
-            int len = (int)strcspn(p, "\n");
-            snprintf(line, sizeof(line), "%.*s", len < 119 ? len : 119, p);
-            drawCodeLine(line, code.x + 18, code.y + 12 + i * lineH, 15);
-            p += len;
-            if (*p == '\n') p++;
+            screen = SCREEN_EXAM_RESULTS;
         }
-        if (button((Rectangle){ box.x + 28, box.y + box.height - 66, 220, 44 }, "Put it in the editor", BTN_SECONDARY, true))
+        return;
+    }
+    char text[120];
+    snprintf(text, sizeof(text), exam ? "Exam: coding task (%d marks)" : "Exam: your coding task", EXAM_CODE_MARKS);
+    drawTextCentred(text, (Rectangle){ 0, 0, SCREEN_W, 64 }, 20, FONT_BOLD, COL_INK);
+    if (exam)
+    {
+        int left = EXAM_SECONDS - (int)(GetTime() - examStart);
+        if (left < 0) left = 0;
+        snprintf(text, sizeof(text), "%d:%02d left", left / 60, left % 60);
+        bool hurry = left < 60;
+        float tw = textWidth(text, 18, FONT_BOLD);
+        DrawCircle((int)(SCREEN_W - 44 - tw), 32, 7, hurry ? COL_BAD : COL_ACCENT);
+        drawText(text, SCREEN_W - 30 - tw, 21, 18, FONT_BOLD, hurry ? COL_BAD : COL_INK);
+    }
+
+    /* Left: the task */
+    Rectangle left = { 40, 84, 380, 616 };
+    panel(left, COL_PANEL);
+    float x = left.x + 22, w = left.width - 44, y = left.y + 20;
+    snprintf(text, sizeof(text), "%s  -  %s", ex->title, ex->cpp ? "C++" : "C");
+    drawText(text, x, y, 13, FONT_BOLD, COL_ACCENT);
+    y += 28;
+    y += drawRich(ex->task, x, y, w, 17, COL_INK, true) + 14;
+
+    if (exam)
+    {
+        drawRich("Press Run to test it: you'll see compile errors and what it prints. "
+                 "When you finish the exam, the hidden tests mark it: the more checks pass, the more marks.",
+                 x, y, w, 15, COL_MUTED, true);
+        int answered = 0;
+        for (int i = 0; i < runCount; i++)
         {
-            tbSetText(&editor, ex->solution);
-            showAnswer = false;
-            hasResult = false;
+            answered += examPicks[i] != 0;
         }
-        if (button((Rectangle){ box.x + box.width - 148, box.y + box.height - 66, 120, 44 }, "Close", BTN_PRIMARY, true) ||
-            IsKeyPressed(KEY_ESCAPE))
+        snprintf(text, sizeof(text), "Questions answered: %d of %d", answered, runCount);
+        drawText(text, x, left.y + left.height - 120, 15, FONT_BOLD, COL_INK);
+        if (button((Rectangle){ x, left.y + left.height - 80, w, 52 }, "Finish exam", BTN_PRIMARY, !runPending))
         {
-            showAnswer = false;
+            finishExamRun();
+            return;
         }
+    }
+    else
+    {
+        /* What it got */
+        Rectangle got = { x, y, w, 92 };
+        bool full = examCodeMarks == EXAM_CODE_MARKS;
+        DrawRectangleRounded(got, 0.12f, 8, full ? COL_GOOD_SOFT : COL_GOLD_SOFT);
+        snprintf(text, sizeof(text), "%d of %d marks", examCodeMarks, EXAM_CODE_MARKS);
+        drawText(text, got.x + 16, got.y + 14, 22, FONT_BOLD, full ? COL_GOOD : (Color){ 140, 96, 10, 255 });
+        if (!examCodeStarted)
+        {
+            snprintf(text, sizeof(text), "You didn't get to the coding task.");
+        }
+        else if (examCodeRan && runResult.status == RUN_COMPILE_ERROR)
+        {
+            snprintf(text, sizeof(text), "It didn't compile, so no checks could run.");
+        }
+        else
+        {
+            snprintf(text, sizeof(text), "%d of %d checks passed", examChecksPassed, examChecksTotal);
+        }
+        drawText(text, got.x + 16, got.y + 52, 15, FONT_REGULAR, COL_INK);
+        y += 110;
+        if (button((Rectangle){ x - 8, y, 170, 36 }, "Show the answer", BTN_QUIET, true))
+        {
+            showAnswer = true;
+        }
+        drawRich("You can change your code and press Run to try again. It won't change your exam mark.",
+                 x, y + 50, w, 14, COL_MUTED, true);
+    }
+
+    /* Right: the editor and the results */
+    Rectangle edit = { 440, 84, 720, 372 };
+    codeEditor(edit, &editor, &editorScroll, &editorFocused);
+    bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+    if (button((Rectangle){ 440, 468, 150, 46 }, "Run", BTN_PRIMARY, !runPending) ||
+        (ctrl && IsKeyPressed(KEY_ENTER) && !uiBlocked()))
+    {
+        runPending = true;
+    }
+    if (button((Rectangle){ 602, 468, 150, 46 }, "Start again", BTN_SECONDARY, true))
+    {
+        tbSetText(&editor, ex->starter);
+        hasResult = false;
+    }
+    drawText("Ctrl+V pastes, Ctrl+C copies all your code", 770, 482, 14, FONT_REGULAR, COL_MUTED);
+    /* during the exam: just the output; afterwards: the checks */
+    drawResults((Rectangle){ 440, 526, 720, 174 }, exam ? NULL : ex);
+
+    if (showAnswer)
+    {
+        answerPopup(ex);
     }
 }
 
