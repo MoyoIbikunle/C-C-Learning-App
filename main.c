@@ -129,6 +129,7 @@ static AttemptList history;
 static Glossary glossary;
 static char glossaryError[200] = "";
 static const Term *popupTerm = NULL;      /* the term shown in a pop-up, if any */
+static bool popupJustOpened = false;      /* the click that opened it mustn't also close it */
 static Screen glossaryReturn = SCREEN_PATH;
 static char glossaryQuery[40] = "";
 static float glossaryScroll = 0;
@@ -1786,8 +1787,12 @@ static void drawTermPopup(void)
 
     Rectangle close = { box.x + w - 152, box.y + h - 62, 120, 42 };
     Rectangle go = { box.x + 32, box.y + h - 62, 200, 42 };
-    if (button(close, "Close", BTN_PRIMARY, true) || IsKeyPressed(KEY_ESCAPE) ||
-        (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !CheckCollisionPointRec(GetMousePosition(), box)))
+    /* Close with the button, Esc, or a click outside the box (but not the
+       click that opened it, which is still "pressed" in this same frame) */
+    bool clickOutside = !popupJustOpened && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
+                        !CheckCollisionPointRec(GetMousePosition(), box);
+    popupJustOpened = false;
+    if (button(close, "Close", BTN_PRIMARY, true) || IsKeyPressed(KEY_ESCAPE) || clickOutside)
     {
         popupTerm = NULL;
         return;
@@ -1899,6 +1904,7 @@ static void screenGlossary(void)
         if (hover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !uiBlocked())
         {
             popupTerm = found[i];
+            popupJustOpened = true;
         }
     }
     EndScissorMode();
@@ -1959,6 +1965,7 @@ static void cardKeyWords(const Card *card, float x, float y, float maxX)
         if (clicked(chip))
         {
             popupTerm = order[i];
+            popupJustOpened = true;
         }
         cx += w + 8;
     }
