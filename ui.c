@@ -4,6 +4,7 @@
  * Raylib is "immediate mode": every frame we redraw everything, and a
  * button is just a rectangle we draw and then check for a click.
  */
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include "ui.h"
@@ -28,6 +29,8 @@ const Color COL_CODE_NUM    = { 104, 112, 140, 255 };
 static Font fonts[3];
 static bool fontLoaded[3];
 static bool wantHand;   /* something under the mouse is clickable this frame */
+static bool blocked;    /* a pop-up is open, so nothing underneath reacts */
+static bool wantText;   /* the mouse is over the code editor */
 
 /* Loads a font big, with mipmaps, so it stays sharp when drawn smaller.
    Falls back to Raylib's built-in font if the file is missing. */
@@ -68,16 +71,27 @@ void unloadFonts(void)
 void uiBeginFrame(void)
 {
     wantHand = false;
+    wantText = false;
 }
 
 void uiEndFrame(void)
 {
-    SetMouseCursor(wantHand ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
+    SetMouseCursor(wantHand ? MOUSE_CURSOR_POINTING_HAND : (wantText ? MOUSE_CURSOR_IBEAM : MOUSE_CURSOR_DEFAULT));
+}
+
+void uiBlock(bool on)
+{
+    blocked = on;
+}
+
+bool uiBlocked(void)
+{
+    return blocked;
 }
 
 bool mouseOver(Rectangle r)
 {
-    return CheckCollisionPointRec(GetMousePosition(), r);
+    return !blocked && CheckCollisionPointRec(GetMousePosition(), r);
 }
 
 bool clicked(Rectangle r)
@@ -290,7 +304,218 @@ int codePanel(Rectangle r, const char lines[][120], int count, bool clickable,
         snprintf(num, sizeof(num), "%2d", lineNo);
         float ty = row.y + (lineH - size) / 2 - 1;
         drawText(num, r.x + pad, ty, size, FONT_MONO, COL_CODE_NUM);
-        drawText(lines[i], r.x + pad + numW, ty, size, FONT_MONO, COL_CODE_INK);
+        drawCodeLine(lines[i], r.x + pad + numW, ty, size);
     }
     return hit;
+}
+
+/* ---------- Coloured code ---------- */
+
+static const Color CODE_KEYWORD = { 199, 146, 234, 255 };
+static const Color CODE_STRING  = { 195, 232, 141, 255 };
+static const Color CODE_NUMBER  = { 247, 140, 108, 255 };
+static const Color CODE_COMMENT = { 112, 120, 150, 255 };
+static const Color CODE_PREPROC = { 137, 221, 255, 255 };
+
+static const char *KEYWORDS[] = {
+    "int", "char", "float", "double", "void", "bool", "long", "short", "unsigned", "const", "static",
+    "struct", "class", "public", "private", "return", "if", "else", "for", "while", "do", "switch",
+    "case", "default", "break", "continue", "new", "delete", "nullptr", "NULL", "true", "false",
+    "sizeof", "using", "namespace", "typedef", "enum", NULL
+};
+
+static bool isKeyword(const char *word, int len)
+{
+    for (int i = 0; KEYWORDS[i] != NULL; i++)
+    {
+        if ((int)strlen(KEYWORDS[i]) == len && strncmp(KEYWORDS[i], word, len) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Draws one line of code, colouring keywords, strings, numbers, comments
+   and #include lines. The font is monospaced, so character n is always
+   at x + n * (width of one character). */
+void drawCodeLine(const char *line, float x, float y, float size)
+{
+    float charW = textWidth("M", size, FONT_MONO);
+    char piece[TB_COLS_UI];
+    int len = (int)strlen(line);
+    int i = 0;
+
+    int first = 0;
+    while (line[first] == ' ')
+    {
+        first++;
+    }
+
+    while (i < len)
+    {
+        int start = i;
+        Color colour = COL_CODE_INK;
+        if (line[first] == '#')
+        {
+            i = len;                                   /* the whole line */
+            colour = CODE_PREPROC;
+        }
+        else if (line[i] == '/' && line[i + 1] == '/')
+        {
+            i = len;                                   /* comment to the end */
+            colour = CODE_COMMENT;
+        }
+        else if (line[i] == '"' || line[i] == '\'')
+        {
+            char quote = line[i++];
+            while (i < len && line[i] != quote)
+            {
+                i += (line[i] == '\\' && i + 1 < len) ? 2 : 1;   /* skip \n, \" and so on */
+            }
+            if (i < len) i++;
+            colour = CODE_STRING;
+        }
+        else if (isdigit((unsigned char)line[i]))
+        {
+            while (i < len && (isalnum((unsigned char)line[i]) || line[i] == '.')) i++;
+            colour = CODE_NUMBER;
+        }
+        else if (isalpha((unsigned char)line[i]) || line[i] == '_')
+        {
+            while (i < len && (isalnum((unsigned char)line[i]) || line[i] == '_')) i++;
+            if (isKeyword(line + start, i - start)) colour = CODE_KEYWORD;
+        }
+        else
+        {
+            i++;                                       /* a symbol or space */
+        }
+
+        int n = i - start;
+        if (n > (int)sizeof(piece) - 1) n = (int)sizeof(piece) - 1;
+        memcpy(piece, line + start, n);
+        piece[n] = '\0';
+        drawText(piece, x + start * charW, y, size, FONT_MONO, colour);
+    }
+}
+
+/* ---------- The code editor ---------- */
+
+#define ED_SIZE 18
+#define ED_LINE 25
+
+/* Keys that repeat when held down */
+static bool keyHit(int key)
+{
+    return IsKeyPressed(key) || IsKeyPressedRepeat(key);
+}
+
+void codeEditor(Rectangle r, TextBuffer *tb, int *scroll, bool *focused)
+{
+    const float pad = 12, numW = 46;
+    float charW = textWidth("M", ED_SIZE, FONT_MONO);
+    int visible = (int)((r.height - pad * 2) / ED_LINE);
+    float textX = r.x + pad + numW;
+
+    /* Click to focus and place the cursor; click elsewhere to unfocus */
+    if (!blocked && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    {
+        *focused = CheckCollisionPointRec(GetMousePosition(), r);
+        if (*focused)
+        {
+            Vector2 m = GetMousePosition();
+            int row = *scroll + (int)((m.y - r.y - pad) / ED_LINE);
+            int col = (int)((m.x - textX) / charW + 0.5f);
+            tbSetCursor(tb, row, col);
+        }
+    }
+    if (!blocked && mouseOver(r))
+    {
+        *scroll -= (int)(GetMouseWheelMove() * 3);
+    }
+
+    /* Typing */
+    if (*focused && !blocked)
+    {
+        bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+        int c = GetCharPressed();
+        while (c > 0)
+        {
+            if (!ctrl)
+            {
+                tbInsertChar(tb, (char)c);
+            }
+            c = GetCharPressed();
+        }
+        if (ctrl && IsKeyPressed(KEY_V))
+        {
+            const char *clip = GetClipboardText();
+            if (clip != NULL) tbInsertText(tb, clip);
+        }
+        if (ctrl && IsKeyPressed(KEY_C))
+        {
+            static char all[TB_LINES * TB_COLS];
+            tbGetText(tb, all, sizeof(all));
+            SetClipboardText(all);   /* copies all the code */
+        }
+        if (!ctrl && (keyHit(KEY_ENTER) || keyHit(KEY_KP_ENTER))) tbNewline(tb);
+        if (keyHit(KEY_BACKSPACE)) tbBackspace(tb);
+        if (keyHit(KEY_DELETE))    tbDelete(tb);
+        if (keyHit(KEY_TAB))       tbTab(tb);
+        if (keyHit(KEY_LEFT))      tbMove(tb, 0, -1);
+        if (keyHit(KEY_RIGHT))     tbMove(tb, 0, 1);
+        if (keyHit(KEY_UP))        tbMove(tb, -1, 0);
+        if (keyHit(KEY_DOWN))      tbMove(tb, 1, 0);
+        if (keyHit(KEY_PAGE_UP))   tbMove(tb, -visible, 0);
+        if (keyHit(KEY_PAGE_DOWN)) tbMove(tb, visible, 0);
+        if (IsKeyPressed(KEY_HOME)) tbHome(tb);
+        if (IsKeyPressed(KEY_END))  tbEnd(tb);
+
+        /* keep the cursor on screen */
+        if (tb->row < *scroll) *scroll = tb->row;
+        if (tb->row >= *scroll + visible) *scroll = tb->row - visible + 1;
+    }
+    if (*scroll > tb->count - visible) *scroll = tb->count - visible;
+    if (*scroll < 0) *scroll = 0;
+
+    /* Drawing */
+    DrawRectangleRounded(r, 0.03f, 8, COL_CODE_BG);
+    if (*focused)
+    {
+        DrawRectangleRoundedLinesEx(r, 0.03f, 8, 2, COL_ACCENT);
+    }
+    BeginScissorMode((int)r.x, (int)r.y, (int)r.width, (int)r.height);
+    for (int i = 0; i < visible && *scroll + i < tb->count; i++)
+    {
+        int row = *scroll + i;
+        float y = r.y + pad + i * ED_LINE;
+        if (*focused && row == tb->row)
+        {
+            DrawRectangle((int)r.x + 4, (int)y, (int)r.width - 8, ED_LINE, (Color){ 255, 255, 255, 14 });
+        }
+        char num[12];
+        snprintf(num, sizeof(num), "%3d", row + 1);
+        drawText(num, r.x + pad - 6, y + 3, ED_SIZE - 2, FONT_MONO, COL_CODE_NUM);
+        drawCodeLine(tb->lines[row], textX, y + 2, ED_SIZE);
+    }
+    /* Blinking cursor */
+    if (*focused && tb->row >= *scroll && tb->row < *scroll + visible && (int)(GetTime() * 2) % 2 == 0)
+    {
+        float cx = textX + tb->col * charW;
+        float cy = r.y + pad + (tb->row - *scroll) * ED_LINE;
+        DrawRectangle((int)cx, (int)cy + 2, 2, ED_LINE - 4, WHITE);
+    }
+    EndScissorMode();
+
+    /* A scroll hint when there's more code than fits */
+    if (tb->count > visible)
+    {
+        float barH = r.height * visible / tb->count;
+        float barY = r.y + (r.height - barH) * (*scroll) / (tb->count - visible);
+        DrawRectangleRounded((Rectangle){ r.x + r.width - 8, barY, 4, barH }, 1, 4, (Color){ 255, 255, 255, 50 });
+    }
+    if (mouseOver(r))
+    {
+        wantText = true;
+    }
 }

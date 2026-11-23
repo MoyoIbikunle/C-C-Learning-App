@@ -56,4 +56,16 @@ float codePanelHeight(int count);
 
 void panel(Rectangle r, Color fill);
 
+/* While a pop-up is open, block clicks on everything underneath it */
+void uiBlock(bool on);
+bool uiBlocked(void);
+
+/* One line of code with coloured keywords, strings, numbers and comments */
+#define TB_COLS_UI 128
+void drawCodeLine(const char *line, float x, float y, float size);
+
+/* The code editor: handles typing when focused, and draws itself */
+#include "app.h"
+void codeEditor(Rectangle r, TextBuffer *tb, int *scroll, bool *focused);
+
 #endif

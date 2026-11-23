@@ -9,6 +9,12 @@
  * learners.txt, one block per learner:
  *   LEARNER Bolu 5        name and badges (one bit per badge)
  *   BEST 1 100 50         lesson number, best %, points from that attempt
+ *   MISSED 2 5            lesson number, questions to review (one bit each)
+ *   EXAM 85               best exam score
+ *   STREAK 3 5 20774      streak, best streak, day of last activity
+ *   DUCKS 7               duck problems solved (one bit each)
+ *   CODED 5               coding exercises solved (one bit each)
+ *   TOPIC 3 8 10          lesson number, answers right first time, out of how many
  *   END
  */
 #include <stdio.h>
@@ -19,17 +25,21 @@
 
 const char *BADGE_NAMES[BADGE_COUNT] = {
     "First Steps", "Perfect Score", "Loop Master", "Beginner Graduate",
-    "Problem Solver", "Pointer Pro", "Exam Ready"
+    "Problem Solver", "Pointer Pro", "Exam Ready", "Exam Ace",
+    "On a Roll", "Duck Helper"
 };
 
 const char *BADGE_DESCRIPTIONS[BADGE_COUNT] = {
     "Pass lesson 1",
-    "Get 100% on any lesson",
-    "Pass lesson 3: Decisions and loops",
-    "Pass every Beginner lesson",
-    "Pass every Intermediate lesson",
-    "Get 100% on lesson 9: Pointers",
-    "Pass every lesson in the course"
+    "100% on any lesson",
+    "Pass lesson 3: Loops",
+    "Pass all Beginner lessons",
+    "Pass all Intermediate",
+    "100% on lesson 9: Pointers",
+    "Pass every lesson",
+    "90%+ in a full exam",
+    "A 7-day streak",
+    "Help with every problem"
 };
 
 void newLearner(Learner *learner, const char *name)
@@ -40,6 +50,8 @@ void newLearner(Learner *learner, const char *name)
     {
         learner->bestPercent[i] = -1;
     }
+    learner->bestExam = -1;
+    learner->lastDay = -1;
 }
 
 /* Names are one word (letters, digits, - or ') so the save file can read them.
@@ -91,6 +103,7 @@ int loadLearners(const char *filename, Learner *list, int max)
         char name[NAME_LEN];
         unsigned badges;
         int number, percent, points;
+        unsigned bits;
 
         if (sscanf(line, "LEARNER %31s %u", name, &badges) == 2 && count < max && validLearnerName(name))
         {
@@ -103,6 +116,35 @@ int loadLearners(const char *filename, Learner *list, int max)
         {
             current->bestPercent[number - 1] = percent;
             current->bestPoints[number - 1] = points;
+        }
+        else if (current != NULL && sscanf(line, "MISSED %d %u", &number, &bits) == 2 &&
+                 number >= 1 && number <= MAX_LESSONS)
+        {
+            current->missed[number - 1] = bits;
+        }
+        else if (current != NULL && sscanf(line, "EXAM %d", &percent) == 1)
+        {
+            current->bestExam = percent;
+        }
+        else if (current != NULL && sscanf(line, "STREAK %d %d %d", &number, &percent, &points) == 3)
+        {
+            current->streak = number;
+            current->bestStreak = percent;
+            current->lastDay = points;
+        }
+        else if (current != NULL && sscanf(line, "DUCKS %u", &bits) == 1)
+        {
+            current->ducksHelped = bits;
+        }
+        else if (current != NULL && sscanf(line, "CODED %u", &bits) == 1)
+        {
+            current->codeSolved = bits;
+        }
+        else if (current != NULL && sscanf(line, "TOPIC %d %d %d", &number, &percent, &points) == 3 &&
+                 number >= 1 && number <= MAX_LESSONS)
+        {
+            current->topicRight[number - 1] = percent;
+            current->topicTried[number - 1] = points;
         }
         else if (strncmp(line, "END", 3) == 0)
         {
@@ -128,6 +170,33 @@ int saveLearners(const char *filename, const Learner *list, int count)
             if (list[i].bestPercent[l] >= 0)
             {
                 fprintf(fp, "BEST %d %d %d\n", l + 1, list[i].bestPercent[l], list[i].bestPoints[l]);
+            }
+            if (list[i].missed[l] != 0)
+            {
+                fprintf(fp, "MISSED %d %u\n", l + 1, list[i].missed[l]);
+            }
+        }
+        if (list[i].bestExam >= 0)
+        {
+            fprintf(fp, "EXAM %d\n", list[i].bestExam);
+        }
+        if (list[i].lastDay >= 0)
+        {
+            fprintf(fp, "STREAK %d %d %d\n", list[i].streak, list[i].bestStreak, list[i].lastDay);
+        }
+        if (list[i].ducksHelped != 0)
+        {
+            fprintf(fp, "DUCKS %u\n", list[i].ducksHelped);
+        }
+        if (list[i].codeSolved != 0)
+        {
+            fprintf(fp, "CODED %u\n", list[i].codeSolved);
+        }
+        for (int l = 0; l < MAX_LESSONS; l++)
+        {
+            if (list[i].topicTried[l] > 0)
+            {
+                fprintf(fp, "TOPIC %d %d %d\n", l + 1, list[i].topicRight[l], list[i].topicTried[l]);
             }
         }
         fprintf(fp, "END\n");
@@ -166,6 +235,14 @@ int totalPoints(const Learner *learner)
     for (int i = 0; i < MAX_LESSONS; i++)
     {
         total += learner->bestPoints[i];
+    }
+    for (int d = 0; d < MAX_DUCKS; d++)
+    {
+        total += ((learner->ducksHelped >> d) & 1u) * DUCK_POINTS;
+    }
+    for (int e = 0; e < MAX_EXERCISES; e++)
+    {
+        total += ((learner->codeSolved >> e) & 1u) * CODE_POINTS;
     }
     return total + badgeCount(learner) * BADGE_BONUS;
 }
@@ -239,4 +316,59 @@ unsigned finishLesson(Learner *learner, const Course *course, int index, int poi
         learner->badges |= 1u << BADGE_EXAM_READY;
     }
     return learner->badges & ~before;
+}
+
+/* Days since 1 January 1970 for a date. Counting days in whole 400-year
+   cycles takes care of leap years (the same rule as the Lab 1 leap year question). */
+int dayNumber(int year, int month, int day)
+{
+    year -= (month <= 2);                                  /* treat Jan and Feb as the end of last year */
+    int era = (year >= 0 ? year : year - 399) / 400;
+    int yearOfEra = year - era * 400;                      /* 0 to 399 */
+    int dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;   /* from 1 March */
+    int dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
+    return era * 146097 + dayOfEra - 719468;
+}
+
+/* Counts today towards the streak. grew is set if the streak went up
+   (the first activity of a new day). Returns badges earned for the first time. */
+unsigned recordActivity(Learner *learner, int today, bool *grew)
+{
+    *grew = false;
+    if (learner->lastDay == today)
+    {
+        return 0;   /* already counted today */
+    }
+    if (learner->lastDay == today - 1)
+    {
+        learner->streak++;      /* came back the next day */
+    }
+    else
+    {
+        learner->streak = 1;    /* first day, or the streak was broken */
+    }
+    learner->lastDay = today;
+    *grew = true;
+    if (learner->streak > learner->bestStreak)
+    {
+        learner->bestStreak = learner->streak;
+    }
+
+    unsigned before = learner->badges;
+    if (learner->streak >= STREAK_BADGE_DAYS)
+    {
+        learner->badges |= 1u << BADGE_ON_A_ROLL;
+    }
+    return learner->badges & ~before;
+}
+
+/* The streak as it stands today: still alive if the last activity was
+   today or yesterday, otherwise 0 */
+int currentStreak(const Learner *learner, int today)
+{
+    if (learner->lastDay < 0 || learner->lastDay < today - 1)
+    {
+        return 0;
+    }
+    return learner->streak;
 }

@@ -237,6 +237,14 @@ int loadCourse(const char *filename, Course *course, char *error, int errorSize)
             {
                 /* Check the answer points at something that exists */
                 int limit = (q->type == Q_BUG) ? q->codeCount : q->optionCount;
+                if (lesson->questionCount >= MAX_QUESTIONS)
+                {
+                    snprintf(error, errorSize, "Line %d: lesson %d has more than %d questions",
+                             lineNo, lesson->number, MAX_QUESTIONS);
+                    free(q);
+                    q = NULL;
+                    break;
+                }
                 if (q->answer < 1 || q->answer > limit || q->text[0] == '\0' ||
                     (q->type != Q_BUG && q->optionCount < 2))
                 {

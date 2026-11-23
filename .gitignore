@@ -1,2 +1,5 @@
 *.exe
 learners.txt
+history.txt
+cq_run*
+cq_compile.txt

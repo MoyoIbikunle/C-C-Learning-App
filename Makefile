@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -IC:/raylib/include
 LIBS = -LC:/raylib/lib -lraylib -lopengl32 -lgdi32 -lwinmm
-LOGIC = course.c learner.c
+LOGIC = course.c learner.c practice.c duck.c history.c glossary.c textbuf.c runner.c exercises.c
 
 cquest.exe: main.c ui.c ui.h $(LOGIC) app.h
 	$(CC) $(CFLAGS) main.c ui.c $(LOGIC) -o cquest.exe $(LIBS)
@@ -12,6 +12,11 @@ cquest.exe: main.c ui.c ui.h $(LOGIC) app.h
 test: test_app.c $(LOGIC) app.h
 	$(CC) -std=c99 -Wall -Wextra test_app.c $(LOGIC) -o test_app.exe
 	./test_app.exe
+
+# Compiles and runs every exercise's model answer and starter code (needs gcc and g++)
+test-code: test_app.c $(LOGIC) app.h
+	$(CC) -std=c99 -Wall -Wextra test_app.c $(LOGIC) -o test_app.exe
+	./test_app.exe code
 
 clean:
 	rm -f cquest.exe test_app.exe

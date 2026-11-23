@@ -1,0 +1,292 @@
+# C Quest glossary. Format: see the top of glossary.c.
+# Terms are listed in lesson order. Lesson cards show the terms they use
+# from their own lesson and earlier ones.
+
+# ---------- Lesson 1: First programs ----------
+TERM main
+LESSON 1
+MEANS The function where every C program starts running. Returning 0 from it tells the system everything worked.
+EXAMPLE int main() { return 0; }
+END
+TERM printf
+LESSON 1
+MEANS Prints text to the screen. Format specifiers in the text say where values go and how to show them.
+EXAMPLE printf("Age: %d\n", age);
+END
+TERM format specifier
+LESSON 1
+MEANS A code starting with % that says what type of value goes there: %d for int, %f for float or double, %c for char and %s for a string.
+EXAMPLE printf("%.2f", price);   // 2 decimal places
+END
+TERM scanf
+LESSON 1
+MEANS Reads what the user types into a variable. It needs the variable's address, so you put & in front.
+EXAMPLE scanf("%d", &age);
+END
+TERM semicolon
+LESSON 1
+MEANS The ; that ends every statement in C. Leaving one out is a compile error.
+EXAMPLE int x = 5;
+END
+
+# ---------- Lesson 2: Variables and maths ----------
+TERM variable
+LESSON 2
+MEANS A named place in memory that holds a value of one type. In C you must declare its type before using it.
+EXAMPLE int age = 25;
+END
+TERM integer division
+LESSON 2
+MEANS Dividing one int by another. The decimal part is cut off, not rounded.
+EXAMPLE 7 / 2   // gives 3
+END
+TERM remainder
+LESSON 2
+MEANS What's left over after dividing, worked out with the % operator.
+EXAMPLE 10 % 3   // gives 1
+END
+TERM casting
+LESSON 2
+MEANS Converting a value to another type by putting the type in brackets in front of it.
+EXAMPLE (float)7 / 2   // gives 3.5
+END
+TERM const
+LESSON 2
+MEANS Makes a variable read-only: trying to change it after it's declared is a compile error.
+EXAMPLE const int MAX_SCORE = 100;
+END
+
+# ---------- Lesson 3: Decisions and loops ----------
+TERM switch
+LESSON 3
+MEANS Checks one variable against several exact values (cases). Each case usually ends with break.
+EXAMPLE switch (grade) { case 'A': ... break; }
+END
+TERM fall-through
+LESSON 3
+MEANS When a switch case has no break, so the code carries on into the next case.
+EXAMPLE case 'A': printf("A"); case 'B': ...
+END
+TERM do-while
+LESSON 3
+MEANS A loop that checks its condition at the end, so its body always runs at least once.
+EXAMPLE do { n--; } while (n > 0);
+END
+TERM break
+LESSON 3
+MEANS Leaves a loop or a switch straight away.
+EXAMPLE if (found) break;
+END
+TERM continue
+LESSON 3
+MEANS Skips the rest of the loop body and goes on to the next time round.
+EXAMPLE if (i % 2 == 0) continue;
+END
+
+# ---------- Lesson 4: Arrays and strings ----------
+TERM array
+LESSON 4
+MEANS A fixed number of values of the same type, stored next to each other in memory and numbered from 0.
+EXAMPLE int nums[5] = {10, 20, 30, 40, 50};
+END
+TERM index
+LESSON 4
+MEANS The position of an element in an array, counting from 0. The last index is the size minus 1.
+EXAMPLE nums[0]   // the first element
+END
+TERM 2D array
+LESSON 4
+MEANS An array of arrays: a grid of rows and columns, picked with two indexes.
+EXAMPLE int grid[3][4];   grid[row][col]
+END
+TERM sizeof
+LESSON 4
+MEANS Gives the size of a type or variable in bytes. Dividing an array's size by one element's size gives its length.
+EXAMPLE sizeof(arr) / sizeof(arr[0])
+END
+TERM string
+LESSON 4
+MEANS In C, an array of chars that ends with the null terminator.
+EXAMPLE char name[20] = "Alice";
+END
+TERM null terminator
+LESSON 4
+MEANS The '\0' char that marks the end of a string. Functions like printf stop when they reach it.
+EXAMPLE "Cork" is stored as 'C' 'o' 'r' 'k' '\0'
+END
+
+# ---------- Lesson 5: Functions ----------
+TERM function
+LESSON 5
+MEANS A named block of code with a return type and parameters, which you can call again and again.
+EXAMPLE int square(int n) { return n * n; }
+END
+TERM prototype
+LESSON 5
+MEANS The first line of a function ending in ;, written above main so the compiler knows the function exists.
+EXAMPLE int square(int n);
+END
+TERM parameter
+LESSON 5
+MEANS A variable in a function's brackets that receives a value when the function is called.
+EXAMPLE void greet(char name[])
+END
+TERM return
+LESSON 5
+MEANS Ends a function and sends a value back to whoever called it.
+EXAMPLE return total;
+END
+TERM pass by value
+LESSON 5
+MEANS The function gets a copy of the argument, so changing it doesn't change the caller's variable.
+EXAMPLE void change(int x) { x = 100; }
+END
+TERM pass by reference
+LESSON 5
+MEANS Passing a variable's address (or a C++ reference) so the function can change the caller's variable.
+EXAMPLE void addOne(int *x) { *x = *x + 1; }
+END
+
+# ---------- Lesson 6: Number problems ----------
+TERM leap year
+LESSON 6
+MEANS A year divisible by 4 but not by 100, unless it's also divisible by 400.
+EXAMPLE (y % 4 == 0 && y % 100 != 0) || y % 400 == 0
+END
+TERM palindrome
+LESSON 6
+MEANS Something that reads the same forwards and backwards, like the number 121.
+EXAMPLE reverse(n) == n
+END
+TERM prime
+LESSON 6
+MEANS A number above 1 that only divides by 1 and itself. You only need to test divisors up to its square root.
+EXAMPLE 2, 3, 5, 7, 11, 13
+END
+TERM binary
+LESSON 6
+MEANS Base 2: each digit is worth twice the one to its right (1, 2, 4, 8...).
+EXAMPLE 110 in binary = 4 + 2 + 0 = 6
+END
+
+# ---------- Lesson 7: Array problems ----------
+TERM shifting
+LESSON 7
+MEANS Moving array elements one place left or right, used to insert or delete in the middle of an array.
+EXAMPLE arr[i] = arr[i - 1];
+END
+TERM rotate
+LESSON 7
+MEANS Moving every element along by one, with the one that falls off the end going to the other end.
+EXAMPLE {1, 2, 3, 4} -> {2, 3, 4, 1}
+END
+
+# ---------- Lesson 8: Patterns and grids ----------
+TERM nested loop
+LESSON 8
+MEANS A loop inside another loop. The inner loop runs all the way through for each time round the outer loop.
+EXAMPLE for (r...) { for (c...) { ... } }
+END
+
+# ---------- Lesson 9: Pointers ----------
+TERM address
+LESSON 9
+MEANS Where a variable lives in memory. & in front of a variable gives its address.
+EXAMPLE &age
+END
+TERM pointer
+LESSON 9
+MEANS A variable that stores an address. * in front of it gives the value at that address.
+EXAMPLE int *p = &x;   *p = 10;
+END
+TERM pointer arithmetic
+LESSON 9
+MEANS Adding to a pointer moves it by whole elements, not bytes, so *(p + 2) is the same as p[2].
+EXAMPLE int *p = arr;   p++;
+END
+TERM NULL
+LESSON 9
+MEANS A pointer value meaning "points at nothing" (nullptr in C++). Check for it before using *.
+EXAMPLE if (p != NULL) { ... }
+END
+
+# ---------- Lesson 10: Memory management ----------
+TERM stack
+LESSON 10
+MEANS The memory for local variables. They're removed automatically when their function or block ends.
+EXAMPLE int x = 5;   // on the stack
+END
+TERM heap
+LESSON 10
+MEANS Memory you ask for with new or malloc. It stays until you free it with delete or free.
+EXAMPLE int *p = new int;
+END
+TERM malloc
+LESSON 10
+MEANS The C function that gets memory from the heap. It takes a number of bytes and returns NULL if it fails.
+EXAMPLE malloc(5 * sizeof(int))
+END
+TERM memory leak
+LESSON 10
+MEANS Heap memory that's never freed and that nothing points to any more, so it can't be given back.
+EXAMPLE p = new int; p = new int;   // first one lost
+END
+TERM dangling pointer
+LESSON 10
+MEANS A pointer to memory that's already been freed. Using it gives rubbish or a crash.
+EXAMPLE delete p;   cout << *p;   // wrong
+END
+
+# ---------- Lesson 11: Linked lists ----------
+TERM linked list
+LESSON 11
+MEANS A chain of nodes, each holding data and a pointer to the next. It grows one node at a time.
+EXAMPLE headPtr -> [10] -> [20] -> nullptr
+END
+TERM node
+LESSON 11
+MEANS One item in a linked list: some data plus a pointer to the next node.
+EXAMPLE struct Node { int data; Node *nextPtr; };
+END
+TERM head
+LESSON 11
+MEANS The pointer to the first node of a linked list. nullptr means the list is empty.
+EXAMPLE Node *headPtr = nullptr;
+END
+TERM doubly linked list
+LESSON 11
+MEANS A linked list where each node also points to the one before it, so you can go both ways.
+EXAMPLE DNode *prevPtr;   DNode *nextPtr;
+END
+
+# ---------- Lesson 12: Classes ----------
+TERM class
+LESSON 12
+MEANS A type that groups data (fields) with the functions that work on it (methods).
+EXAMPLE class Point { ... };
+END
+TERM object
+LESSON 12
+MEANS One variable made from a class, with its own copy of the fields. Also called an instance.
+EXAMPLE Point p;
+END
+TERM constructor
+LESSON 12
+MEANS A method with the class's name and no return type, which runs when an object is made.
+EXAMPLE Point(double px, double py) { ... }
+END
+TERM destructor
+LESSON 12
+MEANS The ~ClassName() method that runs when an object goes out of scope or is deleted. It frees what the object made.
+EXAMPLE ~Buffer() { delete[] data; }
+END
+TERM copy constructor
+LESSON 12
+MEANS The constructor that makes an object from another one, as in Buffer b2 = b1;
+EXAMPLE Buffer(const Buffer &other)
+END
+TERM private
+LESSON 12
+MEANS Members that only the class's own methods can use. Outside code goes through public methods instead.
+EXAMPLE private: double x, y;
+END

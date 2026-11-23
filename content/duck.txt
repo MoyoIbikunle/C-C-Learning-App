@@ -1,0 +1,175 @@
+# C Quest: the duck's problems (Teach tab)
+# Format: see the top of duck.c. Lines starting with # are comments.
+# Each problem has the duck's own idea of what's wrong, which is NOT the
+# real problem, so the learner has to read the code rather than trust him.
+
+DUCK The missing score
+LESSON 1
+SAYS My program prints Score: 0.000000 instead of 42! I think the computer forgot my number because I didn't use scanf.
+CODE #include <stdio.h>
+CODE
+CODE int main() {
+CODE     int score = 42;
+CODE     printf("Score: %f\n", score);
+CODE     return 0;
+CODE }
+BUG 5
+FIX printf("Score: %f\n", &score);
+FIX printf("Score: %d\n", score);
+FIX printf("Score: score\n");
+ANSWER 2
+THANKS Of course! %f is for floats and doubles, but score is an int, so it needs %d. The wrong format specifier prints rubbish. I didn't need scanf at all. Quack, thank you!
+END
+
+DUCK Half missing
+LESSON 2
+SAYS The average of 7 and 8 should be 7.5, but I get 7.0. I think a float can't hold halves, so I should change it to a double.
+CODE int a = 7, b = 8;
+CODE float average = (a + b) / 2;
+CODE printf("%.1f\n", average);   // prints 7.0
+BUG 2
+FIX double average = (a + b) / 2;
+FIX float average = (float)((a + b) / 2);
+FIX float average = (a + b) / 2.0f;
+ANSWER 3
+THANKS So it was never the float! (a + b) / 2 is an int divided by an int, which drops the .5 before it's stored. Dividing by 2.0f makes it a decimal division. A double, or casting after dividing, still loses the half.
+END
+
+DUCK The loop that never ends
+LESSON 3
+SAYS This should print 1 to 5, but it never stops! I think while loops can't count, so I need to use a for loop instead.
+CODE int i = 1;
+CODE while (i <= 5) {
+CODE     printf("%d ", i);
+CODE     i--;
+CODE }
+CODE printf("\n");
+BUG 4
+FIX i++;
+FIX i = 0;
+FIX break;
+ANSWER 1
+THANKS Ah, i-- makes i smaller every time, so i <= 5 is always true! While loops can count fine; they just need a step that moves towards the end. i++ gets there in 5 goes.
+END
+
+DUCK Hello and some rubbish
+LESSON 4
+SAYS My greeting prints Hello and then some strange letters after it. I think printf is reading things I typed earlier.
+CODE char greeting[5] = "Hello";
+CODE printf("%s\n", greeting);
+BUG 1
+FIX char greeting[4] = "Hello";
+FIX char greeting[6] = "Hello";
+FIX char greeting[5] = 'Hello';
+ANSWER 2
+THANKS Hello needs 6 chars: five letters and the '\0' at the end. With only room for 5, the '\0' is left off, so printf keeps going past the end of the array until it finds one.
+END
+
+DUCK Doubling does nothing
+LESSON 5
+SAYS doubleIt doesn't double anything, n is still 4! I think the function isn't running, so I should call it twice.
+CODE int doubleIt(int x) {
+CODE     return x * 2;
+CODE }
+CODE
+CODE int main() {
+CODE     int n = 4;
+CODE     doubleIt(n);
+CODE     printf("%d\n", n);   // prints 4
+CODE     return 0;
+CODE }
+BUG 7
+FIX doubleIt(n * 2);
+FIX n = doubleIt(n);
+FIX doubleIt(&n);
+ANSWER 2
+THANKS The function was running all along! It gives back 8, but I wasn't keeping it. n is passed as a copy, so the function can't change it; I have to store the answer: n = doubleIt(n).
+END
+
+DUCK Rotate and crash
+LESSON 7
+SAYS Rotating my array left mostly works, but sometimes it crashes. I think the last line is wrong and should be arr[size] = first.
+CODE int first = arr[0];
+CODE for (int i = 0; i < size; i++) {
+CODE     arr[i] = arr[i + 1];
+CODE }
+CODE arr[size - 1] = first;
+BUG 2
+FIX for (int i = 0; i <= size; i++) {
+FIX for (int i = 1; i < size; i++) {
+FIX for (int i = 0; i < size - 1; i++) {
+ANSWER 3
+THANKS On the last time round, i is size - 1, so arr[i + 1] reads arr[size], which is past the end. Stopping at size - 1 fixes it, and arr[size - 1] = first was right all along. arr[size] would be past the end too!
+END
+
+DUCK The stubborn pointer
+LESSON 9
+SAYS I want to change a to 10 using my pointer, but it won't compile. I think the pointer needs its own & in front.
+CODE int a = 3;
+CODE int *p = &a;
+CODE p = 10;
+CODE printf("%d\n", a);   // should print 10
+BUG 3
+FIX *p = 10;
+FIX &p = 10;
+FIX p = &10;
+ANSWER 1
+THANKS p holds an address, so p = 10 tries to point it at address 10. *p means "the value p points at", so *p = 10 changes a. &p would be the pointer's own address, which you can't assign to.
+END
+
+DUCK Tidying up memory
+LESSON 10
+SAYS My program works, but my lecturer says it frees memory the wrong way. I think it's because I didn't fill in nums[3].
+CODE int *nums = new int[3];
+CODE nums[0] = 1;
+CODE nums[1] = 2;
+CODE nums[2] = 3;
+CODE cout << nums[0] + nums[2] << endl;
+CODE delete nums;
+BUG 6
+FIX free(nums);
+FIX delete nums[3];
+FIX delete[] nums;
+ANSWER 3
+THANKS Memory from new[] must be freed with delete[], not plain delete. And nums[3] doesn't exist: a 3-element array only has indexes 0 to 2, so there was nothing to fill in.
+END
+
+DUCK Stuck on the second node
+LESSON 11
+SAYS PrintList prints my first two numbers, then the second one forever. I think my list has a loop in it somewhere.
+CODE void PrintList(Node *headPtr) {
+CODE     Node *cur = headPtr;
+CODE     while (cur != nullptr) {
+CODE         cout << cur->data << " ";
+CODE         cur = headPtr->nextPtr;
+CODE     }
+CODE }
+BUG 5
+FIX cur = cur->nextPtr;
+FIX headPtr = nullptr;
+FIX cur = nullptr;
+ANSWER 1
+THANKS The list was fine! headPtr->nextPtr is always the second node, so cur never gets past it. Moving on from cur itself walks the whole list until it reaches nullptr.
+END
+
+DUCK The counter that can't count
+LESSON 12
+SAYS My Counter prints a huge strange number instead of 1. I think add() is adding far too much.
+CODE class Counter {
+CODE public:
+CODE     void add() { count++; }
+CODE     int get() { return count; }
+CODE private:
+CODE     int count;
+CODE };
+CODE
+CODE Counter c;
+CODE c.add();
+CODE cout << c.get();   // should print 1
+BUG 6
+FIX int count = 1;
+FIX double count;
+FIX int count = 0;
+ANSWER 3
+THANKS add() only ever adds 1. count was never given a starting value, so it began with whatever was in that memory. Starting it at 0 (or setting it in a constructor) fixes it.
+END

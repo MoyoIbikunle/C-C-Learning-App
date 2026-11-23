@@ -1,0 +1,619 @@
+# C Quest coding exercises (Code tab). Format: see the top of exercises.c.
+# The learner's code and the hidden TEST code are joined into one program.
+# Every SOLUTION is checked against its EXPECT lines by the tests.
+
+EXERCISE Say hello
+LESSON 1
+LANG c
+TASK Write `greet` so it prints Hello, then the name, then ! and a new line. For example, `greet("Ada")` prints `Hello, Ada!`
+HINT Use printf with %s where the name goes, and finish with \n.
+STARTER void greet(char name[])
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST int main(void)
+TEST {
+TEST     greet("Ada");
+TEST     greet("Sam");
+TEST     return 0;
+TEST }
+EXPECT Hello, Ada!
+EXPECT Hello, Sam!
+SOLUTION void greet(char name[])
+SOLUTION {
+SOLUTION     printf("Hello, %s!\n", name);
+SOLUTION }
+END
+
+EXERCISE Average of two
+LESSON 2
+LANG c
+TASK Write `average` so it returns the average of two ints as a float, keeping any .5. So `average(7, 8)` is 7.5, not 7.
+HINT (a + b) / 2 is integer division and drops the .5. Divide by 2.0f instead, or cast first.
+STARTER float average(int a, int b)
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     printf("average(7, 8) = %.1f\n", average(7, 8));
+TEST     printf("average(2, 4) = %.1f\n", average(2, 4));
+TEST     printf("average(0, 1) = %.1f\n", average(0, 1));
+TEST     return 0;
+TEST }
+EXPECT average(7, 8) = 7.5
+EXPECT average(2, 4) = 3.0
+EXPECT average(0, 1) = 0.5
+SOLUTION float average(int a, int b)
+SOLUTION {
+SOLUTION     return (a + b) / 2.0f;
+SOLUTION }
+END
+
+EXERCISE Grade letter
+LESSON 3
+LANG c
+TASK Write `grade` so it returns 'A' for 90 or more, 'B' for 80 to 89, 'C' for 70 to 79 and 'F' for anything lower.
+HINT Check the highest grade first with if / else if, so a 95 doesn't stop at the B check.
+STARTER char grade(int score)
+STARTER {
+STARTER     return 'F';
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int scores[5] = {95, 90, 85, 70, 42};
+TEST     for (int i = 0; i < 5; i++)
+TEST     {
+TEST         printf("grade(%d) = %c\n", scores[i], grade(scores[i]));
+TEST     }
+TEST     return 0;
+TEST }
+EXPECT grade(95) = A
+EXPECT grade(90) = A
+EXPECT grade(85) = B
+EXPECT grade(70) = C
+EXPECT grade(42) = F
+SOLUTION char grade(int score)
+SOLUTION {
+SOLUTION     if (score >= 90) return 'A';
+SOLUTION     else if (score >= 80) return 'B';
+SOLUTION     else if (score >= 70) return 'C';
+SOLUTION     return 'F';
+SOLUTION }
+END
+
+EXERCISE Countdown
+LESSON 3
+LANG c
+TASK Write `countdown` so it prints the numbers from n down to 1 with a space after each, then Liftoff! and a new line. `countdown(3)` prints `3 2 1 Liftoff!`
+HINT A for loop that starts at n and does i-- each time, while i >= 1.
+STARTER void countdown(int n)
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST int main(void)
+TEST {
+TEST     countdown(3);
+TEST     countdown(1);
+TEST     countdown(5);
+TEST     return 0;
+TEST }
+EXPECT 3 2 1 Liftoff!
+EXPECT 1 Liftoff!
+EXPECT 5 4 3 2 1 Liftoff!
+SOLUTION void countdown(int n)
+SOLUTION {
+SOLUTION     for (int i = n; i >= 1; i--)
+SOLUTION     {
+SOLUTION         printf("%d ", i);
+SOLUTION     }
+SOLUTION     printf("Liftoff!\n");
+SOLUTION }
+END
+
+EXERCISE Sum an array
+LESSON 4
+LANG c
+TASK Write `sumArray` so it returns the total of the first size elements of arr.
+HINT Start a total at 0 and add arr[i] for i from 0 up to (but not including) size.
+STARTER int sumArray(int arr[], int size)
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int a[5] = {1, 2, 3, 4, 5};
+TEST     int b[3] = {-3, 3, 7};
+TEST     int c[1] = {10};
+TEST     printf("sum of 1..5 = %d\n", sumArray(a, 5));
+TEST     printf("sum of -3, 3, 7 = %d\n", sumArray(b, 3));
+TEST     printf("sum of 10 = %d\n", sumArray(c, 1));
+TEST     printf("sum of nothing = %d\n", sumArray(a, 0));
+TEST     return 0;
+TEST }
+EXPECT sum of 1..5 = 15
+EXPECT sum of -3, 3, 7 = 7
+EXPECT sum of 10 = 10
+EXPECT sum of nothing = 0
+SOLUTION int sumArray(int arr[], int size)
+SOLUTION {
+SOLUTION     int total = 0;
+SOLUTION     for (int i = 0; i < size; i++)
+SOLUTION     {
+SOLUTION         total += arr[i];
+SOLUTION     }
+SOLUTION     return total;
+SOLUTION }
+END
+
+EXERCISE String length
+LESSON 4
+LANG c
+TASK Write `stringLength` so it returns how many characters are in s, without using strlen.
+HINT Count characters until you reach the null terminator '\0'.
+STARTER int stringLength(char s[])
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     printf("Cork: %d\n", stringLength("Cork"));
+TEST     printf("empty: %d\n", stringLength(""));
+TEST     printf("Hello, World: %d\n", stringLength("Hello, World"));
+TEST     return 0;
+TEST }
+EXPECT Cork: 4
+EXPECT empty: 0
+EXPECT Hello, World: 12
+SOLUTION int stringLength(char s[])
+SOLUTION {
+SOLUTION     int len = 0;
+SOLUTION     while (s[len] != '\0')
+SOLUTION     {
+SOLUTION         len++;
+SOLUTION     }
+SOLUTION     return len;
+SOLUTION }
+END
+
+EXERCISE Swap two numbers
+LESSON 5
+LANG c
+TASK Write `swap` so it swaps the values of the two variables a and b point at.
+HINT Save *a in a temp variable, copy *b into *a, then put temp into *b.
+STARTER void swap(int *a, int *b)
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int x = 1, y = 2;
+TEST     swap(&x, &y);
+TEST     printf("x = %d, y = %d\n", x, y);
+TEST     swap(&x, &y);
+TEST     printf("x = %d, y = %d\n", x, y);
+TEST     return 0;
+TEST }
+EXPECT x = 2, y = 1
+EXPECT x = 1, y = 2
+SOLUTION void swap(int *a, int *b)
+SOLUTION {
+SOLUTION     int temp = *a;
+SOLUTION     *a = *b;
+SOLUTION     *b = temp;
+SOLUTION }
+END
+
+EXERCISE Biggest in an array
+LESSON 5
+LANG c
+TASK Write `biggest` so it returns the largest value in the array. Watch out: all the numbers might be negative.
+HINT Start with biggest = arr[0], not 0, then compare the rest.
+STARTER int biggest(int arr[], int size)
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int a[3] = {3, 9, 2};
+TEST     int b[3] = {-5, -2, -9};
+TEST     int c[1] = {7};
+TEST     printf("biggest of 3, 9, 2 = %d\n", biggest(a, 3));
+TEST     printf("biggest of -5, -2, -9 = %d\n", biggest(b, 3));
+TEST     printf("biggest of 7 = %d\n", biggest(c, 1));
+TEST     return 0;
+TEST }
+EXPECT biggest of 3, 9, 2 = 9
+EXPECT biggest of -5, -2, -9 = -2
+EXPECT biggest of 7 = 7
+SOLUTION int biggest(int arr[], int size)
+SOLUTION {
+SOLUTION     int max = arr[0];
+SOLUTION     for (int i = 1; i < size; i++)
+SOLUTION     {
+SOLUTION         if (arr[i] > max) max = arr[i];
+SOLUTION     }
+SOLUTION     return max;
+SOLUTION }
+END
+
+EXERCISE Leap years
+LESSON 6
+LANG c
+TASK Write `isLeapYear`. A leap year is divisible by 4 but not by 100, unless it's also divisible by 400.
+HINT (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+STARTER bool isLeapYear(int year)
+STARTER {
+STARTER     return false;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int years[4] = {2024, 1900, 2000, 2023};
+TEST     for (int i = 0; i < 4; i++)
+TEST     {
+TEST         printf("isLeapYear(%d) = %d\n", years[i], isLeapYear(years[i]));
+TEST     }
+TEST     return 0;
+TEST }
+EXPECT isLeapYear(2024) = 1
+EXPECT isLeapYear(1900) = 0
+EXPECT isLeapYear(2000) = 1
+EXPECT isLeapYear(2023) = 0
+SOLUTION bool isLeapYear(int year)
+SOLUTION {
+SOLUTION     return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+SOLUTION }
+END
+
+EXERCISE Prime numbers
+LESSON 6
+LANG c
+TASK Write `isPrime` so it returns true if n is prime. Remember 1 isn't prime, and 2 is.
+HINT Return false if n < 2. Then try dividing by i = 2, 3, 4... while i * i <= n.
+STARTER bool isPrime(int n)
+STARTER {
+STARTER     return false;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int nums[6] = {1, 2, 9, 13, 25, 97};
+TEST     for (int i = 0; i < 6; i++)
+TEST     {
+TEST         printf("isPrime(%d) = %d\n", nums[i], isPrime(nums[i]));
+TEST     }
+TEST     return 0;
+TEST }
+EXPECT isPrime(1) = 0
+EXPECT isPrime(2) = 1
+EXPECT isPrime(9) = 0
+EXPECT isPrime(13) = 1
+EXPECT isPrime(25) = 0
+EXPECT isPrime(97) = 1
+SOLUTION bool isPrime(int n)
+SOLUTION {
+SOLUTION     if (n < 2) return false;
+SOLUTION     for (int i = 2; i * i <= n; i++)
+SOLUTION     {
+SOLUTION         if (n % i == 0) return false;
+SOLUTION     }
+SOLUTION     return true;
+SOLUTION }
+END
+
+EXERCISE Binary to decimal
+LESSON 6
+LANG c
+TASK Write `binaryToDecimal`. The binary number is given as an int made of 1s and 0s, so 110 means binary 110, which is 6.
+HINT binary % 10 is the last digit. Multiply it by the place value (1, 2, 4, 8...) and do binary /= 10.
+STARTER int binaryToDecimal(int binary)
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int nums[4] = {110, 1011, 0, 11111111};
+TEST     for (int i = 0; i < 4; i++)
+TEST     {
+TEST         printf("%d -> %d\n", nums[i], binaryToDecimal(nums[i]));
+TEST     }
+TEST     return 0;
+TEST }
+EXPECT 110 -> 6
+EXPECT 1011 -> 11
+EXPECT 0 -> 0
+EXPECT 11111111 -> 255
+SOLUTION int binaryToDecimal(int binary)
+SOLUTION {
+SOLUTION     int decimal = 0, place = 1;
+SOLUTION     while (binary != 0)
+SOLUTION     {
+SOLUTION         decimal += (binary % 10) * place;
+SOLUTION         place *= 2;
+SOLUTION         binary /= 10;
+SOLUTION     }
+SOLUTION     return decimal;
+SOLUTION }
+END
+
+EXERCISE Find in an array
+LESSON 7
+LANG c
+TASK Write `find` so it returns the index of the first element equal to target, or -1 if it isn't there.
+HINT Return i as soon as arr[i] == target. Only return -1 after the loop has checked everything.
+STARTER int find(int arr[], int size, int target)
+STARTER {
+STARTER     return -1;
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int a[5] = {4, 8, 15, 16, 23};
+TEST     int b[4] = {7, 3, 9, 3};
+TEST     printf("find 4 = %d\n", find(a, 5, 4));
+TEST     printf("find 23 = %d\n", find(a, 5, 23));
+TEST     printf("find 99 = %d\n", find(a, 5, 99));
+TEST     printf("first 3 = %d\n", find(b, 4, 3));
+TEST     return 0;
+TEST }
+EXPECT find 4 = 0
+EXPECT find 23 = 4
+EXPECT find 99 = -1
+EXPECT first 3 = 1
+SOLUTION int find(int arr[], int size, int target)
+SOLUTION {
+SOLUTION     for (int i = 0; i < size; i++)
+SOLUTION     {
+SOLUTION         if (arr[i] == target) return i;
+SOLUTION     }
+SOLUTION     return -1;
+SOLUTION }
+END
+
+EXERCISE Rotate left
+LESSON 7
+LANG c
+TASK Write `rotateLeft` so every element moves one place left and the first one goes to the end: {1, 2, 3, 4} becomes {2, 3, 4, 1}.
+HINT Save arr[0], shift the rest left with i < size - 1, then put the saved value in arr[size - 1].
+STARTER void rotateLeft(int arr[], int size)
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST void show(int arr[], int size)
+TEST {
+TEST     for (int i = 0; i < size; i++) printf("%d ", arr[i]);
+TEST     printf("\n");
+TEST }
+TEST int main(void)
+TEST {
+TEST     int a[4] = {1, 2, 3, 4};
+TEST     int b[1] = {5};
+TEST     rotateLeft(a, 4);
+TEST     show(a, 4);
+TEST     rotateLeft(a, 4);
+TEST     show(a, 4);
+TEST     rotateLeft(b, 1);
+TEST     show(b, 1);
+TEST     return 0;
+TEST }
+EXPECT 2 3 4 1
+EXPECT 3 4 1 2
+EXPECT 5
+SOLUTION void rotateLeft(int arr[], int size)
+SOLUTION {
+SOLUTION     int first = arr[0];
+SOLUTION     for (int i = 0; i < size - 1; i++)
+SOLUTION     {
+SOLUTION         arr[i] = arr[i + 1];
+SOLUTION     }
+SOLUTION     arr[size - 1] = first;
+SOLUTION }
+END
+
+EXERCISE Triangle of A's
+LESSON 8
+LANG c
+TASK Write `triangle` so it prints rows lines, with one A on the first line, two on the second, and so on.
+HINT An outer loop for the rows, an inner loop that prints row A's, then printf("\n").
+STARTER void triangle(int rows)
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST int main(void)
+TEST {
+TEST     triangle(3);
+TEST     triangle(1);
+TEST     return 0;
+TEST }
+EXPECT A
+EXPECT AA
+EXPECT AAA
+EXPECT A
+SOLUTION void triangle(int rows)
+SOLUTION {
+SOLUTION     for (int row = 1; row <= rows; row++)
+SOLUTION     {
+SOLUTION         for (int col = 1; col <= row; col++)
+SOLUTION         {
+SOLUTION             printf("A");
+SOLUTION         }
+SOLUTION         printf("\n");
+SOLUTION     }
+SOLUTION }
+END
+
+EXERCISE Min and max
+LESSON 9
+LANG c
+TASK Write `minMax` so it finds the smallest and largest values in the array and stores them where the pointers min and max point.
+HINT Set *min and *max to arr[0], then go through the rest and update them with *min = arr[i] and so on.
+STARTER void minMax(int arr[], int size, int *min, int *max)
+STARTER {
+STARTER     // your code here
+STARTER }
+TEST int main(void)
+TEST {
+TEST     int a[4] = {4, -2, 9, 0};
+TEST     int b[1] = {5};
+TEST     int lo = 0, hi = 0;
+TEST     minMax(a, 4, &lo, &hi);
+TEST     printf("min = %d, max = %d\n", lo, hi);
+TEST     minMax(b, 1, &lo, &hi);
+TEST     printf("min = %d, max = %d\n", lo, hi);
+TEST     return 0;
+TEST }
+EXPECT min = -2, max = 9
+EXPECT min = 5, max = 5
+SOLUTION void minMax(int arr[], int size, int *min, int *max)
+SOLUTION {
+SOLUTION     *min = arr[0];
+SOLUTION     *max = arr[0];
+SOLUTION     for (int i = 1; i < size; i++)
+SOLUTION     {
+SOLUTION         if (arr[i] < *min) *min = arr[i];
+SOLUTION         if (arr[i] > *max) *max = arr[i];
+SOLUTION     }
+SOLUTION }
+END
+
+EXERCISE Make an array
+LESSON 10
+LANG c++
+TASK Write `makeArray` so it makes a new array of size ints on the heap, sets every element to value, and returns it. The tests free it with delete[].
+HINT int *arr = new int[size]; then a loop to fill it, then return arr.
+STARTER int *makeArray(int size, int value)
+STARTER {
+STARTER     return nullptr;
+STARTER }
+TEST int main()
+TEST {
+TEST     int *a = makeArray(4, 7);
+TEST     for (int i = 0; i < 4; i++) cout << a[i] << " ";
+TEST     cout << endl;
+TEST     delete[] a;
+TEST     int *b = makeArray(2, -1);
+TEST     for (int i = 0; i < 2; i++) cout << b[i] << " ";
+TEST     cout << endl;
+TEST     delete[] b;
+TEST     return 0;
+TEST }
+EXPECT 7 7 7 7
+EXPECT -1 -1
+SOLUTION int *makeArray(int size, int value)
+SOLUTION {
+SOLUTION     int *arr = new int[size];
+SOLUTION     for (int i = 0; i < size; i++)
+SOLUTION     {
+SOLUTION         arr[i] = value;
+SOLUTION     }
+SOLUTION     return arr;
+SOLUTION }
+END
+
+EXERCISE Linked list: add and count
+LESSON 11
+LANG c++
+TASK Write `InsertAtEnd`, which adds a new node with newData at the end of the list, and `CountNodes`, which returns how many nodes there are. Don't change the Node struct.
+HINT InsertAtEnd: if *ptrToHeadPtr is nullptr, the new node becomes the head. Otherwise walk to the node whose nextPtr is nullptr and link it there.
+STARTER struct Node {
+STARTER     int data;
+STARTER     Node *nextPtr;
+STARTER };
+STARTER
+STARTER void InsertAtEnd(Node **ptrToHeadPtr, int newData)
+STARTER {
+STARTER     // your code here
+STARTER }
+STARTER
+STARTER int CountNodes(Node *headPtr)
+STARTER {
+STARTER     return 0;
+STARTER }
+TEST void showList(Node *headPtr)
+TEST {
+TEST     for (Node *cur = headPtr; cur != nullptr; cur = cur->nextPtr) cout << cur->data << " ";
+TEST     cout << endl;
+TEST }
+TEST int main()
+TEST {
+TEST     Node *headPtr = nullptr;
+TEST     cout << "count = " << CountNodes(headPtr) << endl;
+TEST     InsertAtEnd(&headPtr, 10);
+TEST     InsertAtEnd(&headPtr, 20);
+TEST     InsertAtEnd(&headPtr, 30);
+TEST     showList(headPtr);
+TEST     cout << "count = " << CountNodes(headPtr) << endl;
+TEST     return 0;
+TEST }
+EXPECT count = 0
+EXPECT 10 20 30
+EXPECT count = 3
+SOLUTION struct Node {
+SOLUTION     int data;
+SOLUTION     Node *nextPtr;
+SOLUTION };
+SOLUTION
+SOLUTION void InsertAtEnd(Node **ptrToHeadPtr, int newData)
+SOLUTION {
+SOLUTION     Node *newNode = new Node();
+SOLUTION     newNode->data = newData;
+SOLUTION     newNode->nextPtr = nullptr;
+SOLUTION     if (*ptrToHeadPtr == nullptr)
+SOLUTION     {
+SOLUTION         *ptrToHeadPtr = newNode;
+SOLUTION         return;
+SOLUTION     }
+SOLUTION     Node *cur = *ptrToHeadPtr;
+SOLUTION     while (cur->nextPtr != nullptr) cur = cur->nextPtr;
+SOLUTION     cur->nextPtr = newNode;
+SOLUTION }
+SOLUTION
+SOLUTION int CountNodes(Node *headPtr)
+SOLUTION {
+SOLUTION     int count = 0;
+SOLUTION     for (Node *cur = headPtr; cur != nullptr; cur = cur->nextPtr) count++;
+SOLUTION     return count;
+SOLUTION }
+END
+
+EXERCISE Bank account class
+LESSON 12
+LANG c++
+TASK Finish the BankAccount class. The constructor sets the starting balance. deposit adds to it. withdraw takes money out and returns true, but if there isn't enough it changes nothing and returns false.
+HINT In withdraw, check if (amount > balance) return false; before taking anything away.
+STARTER class BankAccount {
+STARTER public:
+STARTER     BankAccount(double start) { }
+STARTER     void deposit(double amount) { }
+STARTER     bool withdraw(double amount) { return false; }
+STARTER     double getBalance() { return 0; }
+STARTER private:
+STARTER     double balance;
+STARTER };
+TEST int main()
+TEST {
+TEST     BankAccount acc(50);
+TEST     cout << "start: " << acc.getBalance() << endl;
+TEST     acc.deposit(25);
+TEST     cout << "after deposit 25: " << acc.getBalance() << endl;
+TEST     cout << "withdraw 100: " << acc.withdraw(100) << ", balance " << acc.getBalance() << endl;
+TEST     cout << "withdraw 30: " << acc.withdraw(30) << ", balance " << acc.getBalance() << endl;
+TEST     return 0;
+TEST }
+EXPECT start: 50
+EXPECT after deposit 25: 75
+EXPECT withdraw 100: 0, balance 75
+EXPECT withdraw 30: 1, balance 45
+SOLUTION class BankAccount {
+SOLUTION public:
+SOLUTION     BankAccount(double start) { balance = start; }
+SOLUTION     void deposit(double amount) { balance += amount; }
+SOLUTION     bool withdraw(double amount)
+SOLUTION     {
+SOLUTION         if (amount > balance) return false;
+SOLUTION         balance -= amount;
+SOLUTION         return true;
+SOLUTION     }
+SOLUTION     double getBalance() { return balance; }
+SOLUTION private:
+SOLUTION     double balance;
+SOLUTION };
+END
